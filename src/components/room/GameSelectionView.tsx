@@ -132,7 +132,7 @@ export function GameSelectionView({
         <h1 className="text-3xl font-bold text-foreground text-center mt-4 mb-2">
           איזה משחק נשחק עכשיו?
         </h1>
-        <p className="text-foreground/70 text-center mb-6">בחר משחק והצבע להצבעה</p>
+        <p className="text-foreground/70 text-center mb-6">בחר את המשחק שהכי תרצה לשחק</p>
 
         {startError && (
           <p className="text-soft-pink font-medium text-center mb-4" role="alert">
@@ -142,8 +142,11 @@ export function GameSelectionView({
 
         <div className="flex flex-col gap-4 max-w-md w-full mx-auto">
           {GAMES.map((game) => {
-            const count = voteCount(game.id);
+            const gameVotes = votes.filter((v) => v.game_id === game.id);
             const isSelected = myVote?.game_id === game.id;
+            const voters = gameVotes
+              .map((v) => players.find((p) => p.id === v.player_id))
+              .filter((p): p is PlayerRow => p != null);
             return (
               <button
                 key={game.id}
@@ -151,19 +154,33 @@ export function GameSelectionView({
                 onClick={() => handleVote(game.id)}
                 disabled={voting}
                 className={`
-                  w-full rounded-2xl p-6 flex items-center justify-between gap-4
+                  w-full rounded-2xl p-6 flex flex-col items-stretch gap-0
                   text-right transition shadow-soft active:scale-[0.98] disabled:opacity-60
                   ${isSelected ? "ring-4 ring-playful-yellow bg-playful-yellow/30" : "bg-white/90 hover:bg-white"}
                 `}
               >
-                <span className="text-5xl" aria-hidden>
-                  {game.icon}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-xl text-foreground">{game.label}</p>
-                  <p className="text-foreground/70 text-sm mt-1">
-                    {count} {count === 1 ? "הצבעה" : "הצבעות"}
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-5xl" aria-hidden>
+                    {game.icon}
+                  </span>
+                  <p className="flex-1 min-w-0 font-bold text-xl text-foreground">
+                    {game.label}
                   </p>
+                </div>
+                <div className="flex flex-wrap gap-2 justify-center mt-3">
+                  {voters.length === 0 ? (
+                    <span className="text-sm text-gray-400">עדיין אין הצבעות</span>
+                  ) : (
+                    voters.map((player) => (
+                      <div
+                        key={player.id}
+                        className="flex items-center gap-1 bg-white/50 px-2 py-1 rounded-full text-xs font-medium"
+                      >
+                        <span aria-hidden>{player.avatar}</span>
+                        <span>{player.name}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </button>
             );
