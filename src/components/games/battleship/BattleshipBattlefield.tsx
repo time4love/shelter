@@ -72,8 +72,10 @@ export function BattleshipBattlefield({
   const shotsOnTarget = shots.filter((s) => s.target_id === currentTargetId);
   const shotCellsTarget = new Set(shotsOnTarget.map((s) => s.cell_index));
 
-  // Show ship positions ONLY on the player's own board — never reveal opponent's ships
-  const isViewingOwnBoard = myPlayerInRoom.id === currentTargetId;
+  // Show ship positions ONLY when viewing your own board (you're the target being attacked).
+  // Never show ships when it's your turn (you're the shooter attacking an opponent).
+  const isViewingOwnBoard =
+    myPlayerInRoom.id === currentTargetId && currentTurnId !== myPlayerInRoom.id;
 
   const cells = new Map<number, CellState>();
   shotsOnTarget.forEach((s) => {
@@ -122,11 +124,15 @@ export function BattleshipBattlefield({
 
       if (lastShot.is_hit) {
         if (stillAlive.length < alivePlayers.length) {
+          const nextOpponent = stillAlive.find((id) => id !== currentTurnId);
+          const newTargetId = stillAlive.includes(currentTargetId)
+            ? currentTargetId
+            : (targetQueue.find((id) => stillAlive.includes(id)) ?? nextOpponent ?? currentTurnId);
           await roomsApi.updateGameState(supabase, room.id, {
             phase: "playing",
             currentTurnId,
             targetQueue: targetQueue.filter((id) => stillAlive.includes(id)),
-            currentTargetId: stillAlive.includes(currentTargetId) ? currentTargetId : (targetQueue.find((id) => stillAlive.includes(id)) ?? currentTurnId),
+            currentTargetId: newTargetId,
             alivePlayers: stillAlive,
           });
         }
