@@ -221,7 +221,11 @@ export function BattleshipBattlefield({
   const target = players.find((p) => p.id === currentTargetId);
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-4 px-4 pb-8" dir="rtl" lang="he">
+    <div
+      className={`flex flex-1 flex-col items-center gap-4 px-4 pb-8 rounded-2xl transition-colors ${isMyTurn ? "bg-mint-green/25" : ""}`}
+      dir="rtl"
+      lang="he"
+    >
       <div
         className={`text-center text-lg font-bold ${isMyTurn ? "animate-pulse text-green-600" : "text-foreground"}`}
       >
