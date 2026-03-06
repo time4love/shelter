@@ -7,7 +7,7 @@ import { usePlayerStore } from "@/store/player-store";
 import { useEnsurePlayerId } from "@/hooks/useEnsurePlayerId";
 import { useRoomAndJoinStatus } from "@/hooks/useRoomAndJoinStatus";
 import { useLobbyPlayers } from "@/hooks/useLobbyPlayers";
-import { AudioUnlockBanner, BottomNavBar, ChatOverlay, FloatingChatBubbles, GameEngine, GameSelectionView, GlobalLeaderboard, GlobalSoundboard, JoinModal, LobbyView, ProfileEditModal, RoomNotFoundView, TopMenu } from "@/components/room";
+import { AudioUnlockBanner, BottomNavBar, ChatOverlay, FloatingChatBubbles, GameEngine, GameSelectionView, GlobalLeaderboard, JoinModal, LobbyView, ProfileEditModal, RoomNotFoundView, TopMenu } from "@/components/room";
 import { useRoomAudio } from "@/hooks/useRoomAudio";
 import { useRoomChat } from "@/hooks/useRoomChat";
 
@@ -50,7 +50,6 @@ export default function RoomPage() {
   const { broadcastSound, playSound } = useRoomAudio(room?.id ?? null);
 
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
-  const [soundboardOpen, setSoundboardOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
   // Chat only used when in active room; pass empty string until then (hook no-ops)
@@ -109,7 +108,6 @@ export default function RoomPage() {
         <BottomNavBar
           playerName={playerName ?? ""}
           playerAvatar={playerAvatar ?? ""}
-          onOpenSoundboard={() => setSoundboardOpen(true)}
           onOpenLeaderboard={() => setLeaderboardOpen(true)}
           onOpenProfile={() => setProfileOpen(true)}
           onOpenChat={() => chat.setIsChatOpen(true)}
@@ -125,21 +123,15 @@ export default function RoomPage() {
             players={players}
             onClose={() => chat.setIsChatOpen(false)}
             broadcastSound={broadcastSound}
+            playSound={playSound}
+            supabase={supabase}
+            refetchMyPlayer={refetchMyPlayer}
           />
         )}
         <GlobalLeaderboard
           players={players}
           open={leaderboardOpen}
           onOpenChange={setLeaderboardOpen}
-        />
-        <GlobalSoundboard
-          myPlayerInRoom={myPlayerInRoom}
-          supabase={supabase}
-          broadcastSound={broadcastSound}
-          playSound={playSound}
-          refetchMyPlayer={refetchMyPlayer}
-          open={soundboardOpen}
-          onOpenChange={setSoundboardOpen}
         />
         <ProfileEditModal
           open={profileOpen}
@@ -171,7 +163,6 @@ export default function RoomPage() {
         <BottomNavBar
           playerName={playerName ?? ""}
           playerAvatar={playerAvatar ?? ""}
-          onOpenSoundboard={() => setSoundboardOpen(true)}
           onOpenLeaderboard={() => setLeaderboardOpen(true)}
           onOpenProfile={() => setProfileOpen(true)}
           onOpenChat={() => chat.setIsChatOpen(true)}
@@ -187,21 +178,15 @@ export default function RoomPage() {
             players={players}
             onClose={() => chat.setIsChatOpen(false)}
             broadcastSound={broadcastSound}
+            playSound={playSound}
+            supabase={supabase}
+            refetchMyPlayer={refetchMyPlayer}
           />
         )}
         <GlobalLeaderboard
           players={players}
           open={leaderboardOpen}
           onOpenChange={setLeaderboardOpen}
-        />
-        <GlobalSoundboard
-          myPlayerInRoom={myPlayerInRoom}
-          supabase={supabase}
-          broadcastSound={broadcastSound}
-          playSound={playSound}
-          refetchMyPlayer={refetchMyPlayer}
-          open={soundboardOpen}
-          onOpenChange={setSoundboardOpen}
         />
         <ProfileEditModal
           open={profileOpen}
@@ -234,7 +219,6 @@ export default function RoomPage() {
           <BottomNavBar
             playerName={playerName ?? ""}
             playerAvatar={playerAvatar ?? ""}
-            onOpenSoundboard={() => setSoundboardOpen(true)}
             onOpenLeaderboard={() => setLeaderboardOpen(true)}
             onOpenProfile={() => setProfileOpen(true)}
             onOpenChat={() => chat.setIsChatOpen(true)}
@@ -250,21 +234,15 @@ export default function RoomPage() {
               players={players}
               onClose={() => chat.setIsChatOpen(false)}
               broadcastSound={broadcastSound}
+              playSound={playSound}
+              supabase={supabase}
+              refetchMyPlayer={refetchMyPlayer}
             />
           )}
           <GlobalLeaderboard
             players={players}
             open={leaderboardOpen}
             onOpenChange={setLeaderboardOpen}
-          />
-          <GlobalSoundboard
-            myPlayerInRoom={myPlayerInRoom}
-            supabase={supabase}
-            broadcastSound={broadcastSound}
-            playSound={playSound}
-            refetchMyPlayer={refetchMyPlayer}
-            open={soundboardOpen}
-            onOpenChange={setSoundboardOpen}
           />
           <ProfileEditModal
             open={profileOpen}

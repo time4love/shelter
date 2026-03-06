@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatMessageRow, PlayerRow } from "@/types/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 import { Send, X } from "lucide-react";
 import { usePlayerStore } from "@/store/player-store";
 import { normalizePlayerSounds } from "@/lib/utils/player-sounds";
 import type { RawPlayerSounds } from "@/lib/utils/player-sounds";
+import { SoundManagerModal } from "./SoundManagerModal";
 
 export interface ChatOverlayProps {
   messages: ChatMessageRow[];
@@ -14,8 +17,14 @@ export interface ChatOverlayProps {
   myPlayerInRoom: PlayerRow;
   players: PlayerRow[];
   onClose: () => void;
-  /** Play sound to the room and optionally send a chat line (e.g. for Quick Sounds). */
+  /** Play sound to the room (Quick Sounds). */
   broadcastSound?: (url: string) => void;
+  /** For SoundManagerModal: play locally. */
+  playSound?: (url: string) => void;
+  /** Supabase client for SoundManagerModal (recordings, players.sounds). */
+  supabase?: SupabaseClient<Database>;
+  /** Refetch current player after sound changes. */
+  refetchMyPlayer?: () => Promise<void>;
 }
 
 /**
@@ -30,10 +39,14 @@ export function ChatOverlay({
   players,
   onClose,
   broadcastSound,
+  playSound,
+  supabase,
+  refetchMyPlayer,
 }: ChatOverlayProps) {
   const [inputValue, setInputValue] = useState("");
   const [sending, setSending] = useState(false);
   const [quickSoundSending, setQuickSoundSending] = useState(false);
+  const [isSoundManagerOpen, setIsSoundManagerOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -42,6 +55,8 @@ export function ChatOverlay({
   const quickSoundEntries = Object.entries(playerSounds).filter(
     ([_, entry]) => entry?.url
   ) as [string, { url: string; name: string }][];
+  const soundCount = Object.keys(playerSounds).length;
+  const canOpenSoundManager = Boolean(supabase && refetchMyPlayer && playSound && broadcastSound);
 
   const playersMap = useRef<Map<string, { name: string; avatar: string }>>(new Map());
   playersMap.current = new Map(players.map((p) => [p.id, { name: p.name, avatar: p.avatar }]));
@@ -164,23 +179,41 @@ export function ChatOverlay({
           <div ref={messagesEndRef} />
         </div>
 
-        {quickSoundEntries.length > 0 && (
-          <div className="flex-none p-2 bg-white/80 border-t border-foreground/10 flex gap-2 overflow-x-auto whitespace-nowrap hide-scrollbar">
-            {quickSoundEntries.map(([slot, sound]) => (
-              <button
-                key={slot}
-                type="button"
-                onClick={() => handleQuickSound(sound)}
-                disabled={quickSoundSending}
-                className="bg-purple-100 text-purple-800 text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1 active:scale-95 transition-transform disabled:opacity-60 shrink-0"
-                aria-label={`השמע צליל: ${sound.name}`}
-              >
-                <span aria-hidden>🔊</span>
-                <span>{sound.name}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex-none p-2 bg-white/80 border-t border-foreground/10 flex gap-2 overflow-x-auto whitespace-nowrap hide-scrollbar">
+          {quickSoundEntries.map(([slot, sound]) => (
+            <button
+              key={slot}
+              type="button"
+              onClick={() => handleQuickSound(sound)}
+              disabled={quickSoundSending}
+              className="bg-purple-100 text-purple-800 text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1 active:scale-95 transition-transform disabled:opacity-60 shrink-0"
+              aria-label={`השמע צליל: ${sound.name}`}
+            >
+              <span aria-hidden>🔊</span>
+              <span>{sound.name}</span>
+            </button>
+          ))}
+          {canOpenSoundManager && (
+            <button
+              type="button"
+              onClick={() => setIsSoundManagerOpen(true)}
+              className="shrink-0 text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1 active:scale-95 transition-transform bg-mint-green/20 text-mint-green border border-mint-green/40 hover:bg-mint-green/30"
+              aria-label={soundCount < 3 ? "הוסף צליל" : "ניהול צלילים"}
+            >
+              {soundCount < 3 ? (
+                <>
+                  <span aria-hidden>➕</span>
+                  <span>הוסף צליל</span>
+                </>
+              ) : (
+                <>
+                  <span aria-hidden>⚙️</span>
+                  <span>ניהול צלילים</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
 
         <form
           onSubmit={handleSubmit}
@@ -206,6 +239,18 @@ export function ChatOverlay({
           </button>
         </form>
       </div>
+
+      {canOpenSoundManager && (
+        <SoundManagerModal
+          myPlayerInRoom={myPlayerInRoom}
+          supabase={supabase!}
+          broadcastSound={broadcastSound!}
+          playSound={playSound!}
+          refetchMyPlayer={refetchMyPlayer!}
+          open={isSoundManagerOpen}
+          onOpenChange={setIsSoundManagerOpen}
+        />
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import type { PlayerRow } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import { Megaphone, Play, Trash2, X } from "lucide-react";
+import { Settings, Play, Trash2, X } from "lucide-react";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { players as playersMutations } from "@/lib/supabase/typed-mutations";
 import { usePlayerStore } from "@/store/player-store";
@@ -13,22 +13,22 @@ import type { PlayerSoundsMap } from "@/types/database";
 
 const SLOTS: (1 | 2 | 3)[] = [1, 2, 3];
 
-export interface GlobalSoundboardProps {
+export interface SoundManagerModalProps {
   myPlayerInRoom: PlayerRow | null;
   supabase: SupabaseClient<Database>;
   broadcastSound: (url: string) => void;
   playSound: (url: string) => void;
   refetchMyPlayer: () => Promise<void>;
-  /** When true, the modal is visible. Controlled by parent (e.g. BottomNavBar). */
+  /** When true, the modal is visible. Triggered from Chat (Quick Sounds row). */
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 /**
- * Modal with 3 sound slots. Empty slots: VoiceRecorder. Filled: Play (broadcast + local) and Delete.
- * Opened from BottomNavBar; no floating button.
+ * Modal with 3 sound slots: record, name, play, delete.
+ * Opened from Chat Overlay (Add Sound / Manage Sounds). z-[70] so it appears over Chat.
  */
-export function GlobalSoundboard({
+export function SoundManagerModal({
   myPlayerInRoom,
   supabase,
   broadcastSound,
@@ -36,7 +36,7 @@ export function GlobalSoundboard({
   refetchMyPlayer,
   open,
   onOpenChange,
-}: GlobalSoundboardProps) {
+}: SoundManagerModalProps) {
   const playerSounds = usePlayerStore((s) => s.playerSounds ?? null);
   const merged: PlayerSoundsMap = {
     ...normalizePlayerSounds(playerSounds ?? {}),
@@ -92,12 +92,12 @@ export function GlobalSoundboard({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40 p-0"
+      className="fixed inset-0 z-[70] flex flex-col justify-end bg-black/40 p-0"
       dir="rtl"
       lang="he"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="soundboard-title"
+      aria-labelledby="sound-manager-title"
       onClick={() => onOpenChange(false)}
     >
       <div
@@ -106,11 +106,11 @@ export function GlobalSoundboard({
       >
         <div className="border-b border-foreground/10 bg-white/95 px-4 py-3 flex items-center justify-between rounded-t-3xl">
           <h2
-            id="soundboard-title"
+            id="sound-manager-title"
             className="text-xl font-bold text-foreground flex items-center gap-2"
           >
-            <Megaphone className="h-6 w-6 text-mint-green" />
-            לוח צלילים
+            <Settings className="h-6 w-6 text-mint-green" />
+            ניהול צלילים
           </h2>
           <button
             type="button"

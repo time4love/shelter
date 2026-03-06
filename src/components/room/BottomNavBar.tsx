@@ -1,14 +1,12 @@
 "use client";
 
-import { Megaphone, MessageCircle, Trophy } from "lucide-react";
+import { MessageCircle, Trophy } from "lucide-react";
 
 export interface BottomNavBarProps {
   /** Current player display name */
   playerName: string;
   /** Current player avatar emoji */
   playerAvatar: string;
-  /** Opens the Soundboard modal */
-  onOpenSoundboard: () => void;
   /** Opens the Leaderboard modal */
   onOpenLeaderboard: () => void;
   /** Opens the Profile Edit modal */
@@ -20,13 +18,12 @@ export interface BottomNavBarProps {
 }
 
 /**
- * Fixed bottom navigation bar with Soundboard, Player Profile (center), and Leaderboard.
+ * Fixed bottom navigation: Trophy (left), Player Avatar/Profile (center, large), Chat (right).
  * RTL-friendly; safe area padding for notched devices.
  */
 export function BottomNavBar({
   playerName,
   playerAvatar,
-  onOpenSoundboard,
   onOpenLeaderboard,
   onOpenProfile,
   onOpenChat,
@@ -40,15 +37,15 @@ export function BottomNavBar({
       aria-label="ניווט תחתון"
     >
       <div className="flex justify-around items-center h-16 px-2">
-        {/* Right (RTL first): Soundboard */}
+        {/* Right (RTL first): Trophy */}
         <button
           type="button"
-          onClick={onOpenSoundboard}
-          className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-14 rounded-2xl text-mint-green hover:bg-mint-green/15 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2"
-          aria-label="לוח צלילים"
+          onClick={onOpenLeaderboard}
+          className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-14 rounded-2xl text-playful-yellow hover:bg-playful-yellow/15 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-playful-yellow focus:ring-offset-2"
+          aria-label="טבלת ליגה"
         >
-          <Megaphone className="h-7 w-7" strokeWidth={2} />
-          <span className="text-[10px] font-medium text-foreground/70">צלילים</span>
+          <Trophy className="h-7 w-7" strokeWidth={2} />
+          <span className="text-[10px] font-medium text-foreground/70">ליגה</span>
         </button>
 
         {/* Center: Player profile (avatar + name) */}
@@ -69,35 +66,24 @@ export function BottomNavBar({
           </span>
         </button>
 
-        {/* Left (RTL last): Trophy + Chat */}
-        <div className="flex items-center gap-1">
+        {/* Left (RTL last): Chat */}
+        {onOpenChat && (
           <button
             type="button"
-            onClick={onOpenLeaderboard}
-            className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-14 rounded-2xl text-playful-yellow hover:bg-playful-yellow/15 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-playful-yellow focus:ring-offset-2"
-            aria-label="טבלת ליגה"
+            onClick={onOpenChat}
+            className="relative flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-14 rounded-2xl text-sky-blue hover:bg-sky-blue/15 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-sky-blue focus:ring-offset-2"
+            aria-label={chatHasUnread ? "צ'אט הקבוצה (הודעות חדשות)" : "צ'אט הקבוצה"}
           >
-            <Trophy className="h-7 w-7" strokeWidth={2} />
-            <span className="text-[10px] font-medium text-foreground/70">ליגה</span>
+            {chatHasUnread && (
+              <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border border-white" />
+              </span>
+            )}
+            <MessageCircle className="h-7 w-7" strokeWidth={2} />
+            <span className="text-[10px] font-medium text-foreground/70">צ'אט</span>
           </button>
-          {onOpenChat && (
-            <button
-              type="button"
-              onClick={onOpenChat}
-              className="relative flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-14 rounded-2xl text-sky-blue hover:bg-sky-blue/15 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-sky-blue focus:ring-offset-2"
-              aria-label={chatHasUnread ? "צ'אט הקבוצה (הודעות חדשות)" : "צ'אט הקבוצה"}
-            >
-              {chatHasUnread && (
-                <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border border-white" />
-                </span>
-              )}
-              <MessageCircle className="h-7 w-7" strokeWidth={2} />
-              <span className="text-[10px] font-medium text-foreground/70">צ'אט</span>
-            </button>
-          )}
-        </div>
+        )}
       </div>
     </nav>
   );
