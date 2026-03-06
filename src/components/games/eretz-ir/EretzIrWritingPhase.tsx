@@ -65,7 +65,11 @@ export function EretzIrWritingPhase({
 
   if (isWaiting) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6" dir="rtl" lang="he">
+      <div
+        className="flex flex-col h-[100dvh] overflow-hidden bg-gray-50 items-center justify-center gap-4 px-6"
+        dir="rtl"
+        lang="he"
+      >
         <p className="text-xl font-medium text-foreground">ממתין לשאר...</p>
         {isHost && (
           <button
@@ -81,95 +85,98 @@ export function EretzIrWritingPhase({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col px-4" dir="rtl" lang="he">
+    <div
+      className="flex flex-col h-[100dvh] overflow-hidden bg-gray-50"
+      dir="rtl"
+      lang="he"
+    >
       {/* Sticky header */}
-      <div className="sticky top-0 z-10 bg-gradient-to-b from-background to-transparent pb-2 pt-2">
-        <h2 className="text-center text-xl font-bold text-foreground">
-          האות: {letter}
-        </h2>
-      </div>
-
-      {/* Card */}
-      <div
-        className={`flex flex-1 flex-col rounded-2xl p-6 shadow-card ${bgColor} min-h-[200px] justify-center`}
-      >
-        <h3 className="mb-4 text-center text-2xl font-bold text-foreground">
-          {category}
-        </h3>
-        <input
-          type="text"
-          value={answers[category] ?? ""}
-          onChange={(e) => setAnswer(category, e.target.value)}
-          className="w-full rounded-xl border-2 border-foreground/20 bg-white/90 px-4 py-3 text-lg text-foreground placeholder:text-foreground/50"
-          placeholder={`כתוב ${category} שמתחיל/ה ב־${letter}...`}
-          dir="rtl"
-          autoComplete="off"
-        />
-      </div>
-
-      {/* Navigation */}
-      <div className="mt-4 flex gap-3">
-        <button
-          type="button"
-          onClick={() => setCurrentCardIndex((i) => Math.max(0, i - 1))}
-          disabled={currentCardIndex === 0}
-          className="flex-1 rounded-xl bg-white/90 py-3 font-bold text-foreground shadow-soft disabled:opacity-50 active:scale-[0.98]"
-        >
-          הקודם ←
-        </button>
-        {isLastCard ? (
-          <button
-            type="button"
-            onClick={handleSubmit}
-            className="flex-1 rounded-xl bg-mint-green py-3 font-bold text-white shadow-card active:scale-[0.98]"
-          >
-            סיימתי! שלח תשובות
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setCurrentCardIndex((i) => i + 1)}
-            className="flex-1 rounded-xl bg-playful-yellow py-3 font-bold text-foreground shadow-card active:scale-[0.98]"
-          >
-            הבא →
-          </button>
-        )}
-      </div>
-
-      {submitError && (
-        <p className="mt-2 text-center text-soft-pink font-medium" role="alert">
-          {submitError}
-        </p>
-      )}
-
-      {/* Progress indicators */}
-      <div className="mt-6 flex gap-1">
-        {CATEGORIES.map((cat, index) => (
-          <button
-            key={cat}
-            type="button"
-            onClick={() => setCurrentCardIndex(index)}
-            className={`h-2 flex-1 rounded-full mx-0.5 ${
-              (answers[cat] ?? "").trim() ? "bg-green-400" : "bg-red-400"
-            }`}
-            title={cat}
-            aria-label={`קטגוריה ${cat}`}
-          />
-        ))}
-      </div>
-
-      {/* Host: sticky stop button */}
-      {isHost && (
-        <div className="sticky bottom-0 mt-4 bg-background/95 py-2">
-          <button
-            type="button"
-            onClick={handleHostStop}
-            className="w-full rounded-xl bg-soft-pink py-3 font-bold text-white shadow-card active:scale-[0.98]"
-          >
-            עצור! עברו לתוצאות
-          </button>
+      <div className="flex-none p-4 bg-gray-50 border-b border-black/5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-center text-xl font-bold text-foreground">
+            האות: {letter}
+          </h2>
+          {isHost && (
+            <button
+              type="button"
+              onClick={handleHostStop}
+              className="rounded-xl bg-soft-pink px-4 py-2 font-bold text-white shadow-card active:scale-[0.98]"
+            >
+              עצור! עברו לתוצאות
+            </button>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* Flexible card area (middle) */}
+      <div className="flex-1 min-h-0 flex items-center justify-center p-4">
+        <div
+          className={`max-h-full w-full max-w-md aspect-square md:aspect-auto p-6 flex flex-col items-center justify-center rounded-2xl shadow-card ${bgColor}`}
+        >
+          <h3 className="mb-3 text-center text-2xl font-bold text-foreground shrink-0">
+            {category}
+          </h3>
+          <input
+            type="text"
+            value={answers[category] ?? ""}
+            onChange={(e) => setAnswer(category, e.target.value)}
+            className="w-full min-h-0 max-h-[40vh] rounded-xl border-2 border-foreground/20 bg-white/90 px-4 py-3 text-lg text-foreground placeholder:text-foreground/50"
+            placeholder={`כתוב ${category} שמתחיל/ה ב־${letter}...`}
+            dir="rtl"
+            autoComplete="off"
+          />
+        </div>
+      </div>
+
+      {/* Sticky footer: nav buttons + progress rectangles */}
+      <div className="flex-none bg-white p-4 pb-[env(safe-area-inset-bottom)] border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setCurrentCardIndex((i) => Math.max(0, i - 1))}
+            disabled={currentCardIndex === 0}
+            className="flex-1 rounded-xl bg-white/90 py-3 font-bold text-foreground shadow-soft disabled:opacity-50 active:scale-[0.98]"
+          >
+            הקודם ←
+          </button>
+          {isLastCard ? (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="flex-1 rounded-xl bg-mint-green py-3 font-bold text-white shadow-card active:scale-[0.98]"
+            >
+              סיימתי! שלח תשובות
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCurrentCardIndex((i) => i + 1)}
+              className="flex-1 rounded-xl bg-playful-yellow py-3 font-bold text-foreground shadow-card active:scale-[0.98]"
+            >
+              הבא →
+            </button>
+          )}
+        </div>
+        {submitError && (
+          <p className="mt-2 text-center text-soft-pink font-medium text-sm" role="alert">
+            {submitError}
+          </p>
+        )}
+        <div className="mt-3 flex gap-1">
+          {CATEGORIES.map((cat, index) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setCurrentCardIndex(index)}
+              className={`h-2 flex-1 rounded-full mx-0.5 ${
+                (answers[cat] ?? "").trim() ? "bg-green-400" : "bg-red-400"
+              }`}
+              title={cat}
+              aria-label={`קטגוריה ${cat}`}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
