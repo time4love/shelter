@@ -50,7 +50,7 @@ export const rooms = {
     roomId: string,
     gameState: GameStateTOL
   ) =>
-    client.from("rooms").update({ game_state: gameState as never }).eq("id", roomId),
+    client.from("rooms").update({ game_state: gameState } as never).eq("id", roomId),
 
   /** Set room back to game selection: status, clear current_game and game_state */
   updateToGameSelection: (client: SupabaseClient<Database>, roomId: string) =>
