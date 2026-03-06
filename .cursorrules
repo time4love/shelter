@@ -1,0 +1,56 @@
+# Project Overview
+We are building "Shelter" - a real-time multiplayer mobile web game for kids to play together while staying in a safe room (bomb shelter). 
+No registration is required. Users create a room, share a short link, choose an avatar/name, and play synchronized games.
+
+# Tech Stack
+- Framework: Next.js 14+ (App Router)
+- Language: TypeScript (Strict typing required)
+- Styling: Tailwind CSS
+- Database & Backend: Supabase (PostgreSQL, Realtime subscriptions)
+- Local State: Zustand (with `persist` middleware for localStorage)
+- Icons: `lucide-react`
+
+# Global UI & UX Rules
+1. **Language & Direction**: The app is STRICTLY in Hebrew. The layout MUST be RTL (`dir="rtl"`, `lang="he"`).
+2. **Mobile-First**: The UI must be optimized for mobile screens. Use safe areas, prevent horizontal scrolling, and ensure buttons are large and easy to tap.
+3. **Vibe**: Joyful, colorful, calming, and playful. Use rounded corners (`rounded-2xl` or `rounded-full`), soft shadows, and vibrant pastel colors (yellows, light blues, soft pinks, greens).
+4. **No Stress**: Do not implement timers unless explicitly asked. The UI should feel relaxed.
+
+# Code Quality & Architecture Rules
+1. **Modularity (Clean Code)**: 
+   - DO NOT write monolithic files. 
+   - Break down complex pages into smaller, reusable React components (e.g., `PlayerList`, `AvatarSelector`, `JoinForm`).
+   - Extract logic into Custom Hooks (e.g., `useRoomSync`, `useGameLogic`) to keep the UI components clean and focused on rendering.
+2. **TypeScript Strictness**: 
+   - Always define interfaces/types for Supabase tables and Zustand state. 
+   - Avoid `any`. Use proper generics.
+3. **Next.js App Router**:
+   - Default to Server Components where possible (e.g., static layouts).
+   - Use `"use client"` ONLY when necessary (e.g., for hooks, user interactions, Zustand, or Supabase Realtime subscriptions).
+4. **State Management (Zustand)**:
+   - Use Zustand with `persist` to store the current player's local state (`playerId`, `playerName`, `playerAvatar`, `roomId`).
+   - Generate a UUID for `playerId` locally upon first app load if it doesn't exist.
+
+# Supabase & Real-Time Rules
+1. **Database Access (No Auth)**: 
+   - Since there is no user login, all Supabase requests are considered "Anonymous".
+   - Assume RLS (Row Level Security) is enabled but policies allow anonymous SELECT, INSERT, UPDATE, DELETE based on the specific `room_id`.
+2. **Real-Time Subscriptions**:
+   - ALWAYS clean up Realtime channels on component unmount.
+   - Example pattern:
+     ```typescript
+     useEffect(() => {
+       const channel = supabase.channel('table_db_changes')
+         .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${roomId}` }, (payload) => {
+           // update state
+         }).subscribe();
+       return () => { supabase.removeChannel(channel); };
+     }, []);
+     ```
+3. **Error Handling**: Never let the app crash on a database failure. Show polite, kid-friendly error messages (e.g., "אופס, משהו השתבש. נסה שוב!").
+
+# AI Assistant Instructions
+- Read these rules before generating any code.
+- Write concise, clean, and self-documenting code.
+- If a file is getting too long (over 150-200 lines), proactively suggest splitting it into smaller files.
+- Always provide fully functional code blocks, not just snippets, unless specifically asked otherwise.

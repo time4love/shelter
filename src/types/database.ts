@@ -12,6 +12,8 @@ export type Json =
 
 export type RoomStatus = "lobby" | "game_selection" | "playing" | "results";
 
+export type GameId = "truth_or_lie" | "the_imposter";
+
 export interface Database {
   public: {
     Tables: {
@@ -21,6 +23,7 @@ export interface Database {
           short_code: string;
           host_id: string;
           status: RoomStatus;
+          current_game: string | null;
           created_at: string;
         };
         Insert: {
@@ -28,6 +31,7 @@ export interface Database {
           short_code: string;
           host_id: string;
           status?: RoomStatus;
+          current_game?: string | null;
           created_at?: string;
         };
         Update: {
@@ -35,6 +39,7 @@ export interface Database {
           short_code?: string;
           host_id?: string;
           status?: RoomStatus;
+          current_game?: string | null;
           created_at?: string;
         };
       };
@@ -70,6 +75,33 @@ export interface Database {
           created_at?: string;
         };
       };
+      game_votes: {
+        Row: {
+          id: string;
+          room_id: string;
+          player_id: string;
+          game_id: GameId;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          room_id: string;
+          player_id: string;
+          game_id: GameId;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          room_id?: string;
+          player_id?: string;
+          game_id?: GameId;
+          created_at?: string;
+        };
+      };
     };
   };
 }
+
+export type RoomRow = Database["public"]["Tables"]["rooms"]["Row"];
+export type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
+export type GameVoteRow = Database["public"]["Tables"]["game_votes"]["Row"];

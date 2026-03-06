@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createBrowserClient } from "@/lib/supabase/client";
+import { rooms as roomsApi } from "@/lib/supabase/typed-mutations";
 import { usePlayerStore } from "@/store/player-store";
 import { generateShortCode } from "@/lib/utils/codes";
 import { Sparkles } from "lucide-react";
@@ -41,12 +42,11 @@ export default function HomePage() {
         code = generateShortCode();
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase canary client types
-      const { data: room, error: insertError } = await (supabase as any)
-        .from("rooms")
-        .insert({ short_code: code, host_id: id, status: "lobby" })
-        .select("id")
-        .single();
+      const { data: room, error: insertError } = await roomsApi.insert(supabase, {
+        short_code: code,
+        host_id: id,
+        status: "lobby",
+      });
 
       if (insertError) throw insertError;
       if (!room) throw new Error("Failed to create room");
