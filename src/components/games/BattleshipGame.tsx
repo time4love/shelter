@@ -6,9 +6,8 @@ import type { GameStateBattleship } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { rooms as roomsApi } from "@/lib/supabase/typed-mutations";
-import { calculateGridSize } from "@/components/games/battleship/constants";
-import { BattleshipHidingPhase } from "@/components/games/battleship/BattleshipHidingPhase";
-import { BattleshipPlayingPhase } from "@/components/games/battleship/BattleshipPlayingPhase";
+import { BattleshipPlacement } from "@/components/games/battleship/BattleshipPlacement";
+import { BattleshipBattlefield } from "@/components/games/battleship/BattleshipBattlefield";
 import { BattleshipRoundResults } from "@/components/games/battleship/BattleshipRoundResults";
 
 export interface BattleshipGameProps {
@@ -23,20 +22,22 @@ function parseGameState(room: RoomRow): GameStateBattleship | null {
   const g = room.game_state;
   if (g == null || typeof g !== "object") return null;
   const o = g as Record<string, unknown>;
-  if (o.phase === "hiding" && typeof o.gridSize === "number") {
-    return { phase: "hiding", gridSize: o.gridSize };
+  if (o.phase === "hiding") {
+    return { phase: "hiding" };
   }
   if (
     o.phase === "playing" &&
     typeof o.currentTurnId === "string" &&
-    Array.isArray(o.alivePlayers) &&
-    typeof o.gridSize === "number"
+    Array.isArray(o.targetQueue) &&
+    typeof o.currentTargetId === "string" &&
+    Array.isArray(o.alivePlayers)
   ) {
     return {
       phase: "playing",
       currentTurnId: o.currentTurnId,
+      targetQueue: o.targetQueue as string[],
+      currentTargetId: o.currentTargetId,
       alivePlayers: o.alivePlayers as string[],
-      gridSize: o.gridSize,
     };
   }
   if (o.phase === "round_results") {
@@ -59,11 +60,10 @@ export function BattleshipGame({
 
   useEffect(() => {
     if (!isHost || gameState !== null) return;
-    const gridSize = calculateGridSize(players.length);
-    roomsApi.updateGameState(supabase, room.id, { phase: "hiding", gridSize });
-  }, [isHost, room.id, supabase, players.length, gameState]);
+    roomsApi.updateGameState(supabase, room.id, { phase: "hiding" });
+  }, [isHost, room.id, supabase, gameState]);
 
-  const state = gameState ?? { phase: "hiding" as const, gridSize: calculateGridSize(players.length) };
+  const state = gameState ?? { phase: "hiding" as const };
 
   return (
     <div
@@ -76,24 +76,22 @@ export function BattleshipGame({
       </h1>
 
       {state.phase === "hiding" && (
-        <BattleshipHidingPhase
+        <BattleshipPlacement
           room={room}
           players={players}
           myPlayerInRoom={myPlayerInRoom}
           isHost={isHost}
-          gridSize={state.gridSize}
           supabase={supabase}
         />
       )}
 
       {state.phase === "playing" && (
-        <BattleshipPlayingPhase
+        <BattleshipBattlefield
           room={room}
           players={players}
           myPlayerInRoom={myPlayerInRoom}
           isHost={isHost}
           gameState={state}
-          gridSize={state.gridSize}
           supabase={supabase}
         />
       )}

@@ -127,14 +127,16 @@ export const eretzIrAnswers = {
     client.from("eretz_ir_answers").select("*").eq("room_id", roomId),
 };
 
-type BattleshipSubInsert = Database["public"]["Tables"]["battleship_subs"]["Insert"];
+type BattleshipBoardInsert = Database["public"]["Tables"]["battleship_boards"]["Insert"];
 type BattleshipShotInsert = Database["public"]["Tables"]["battleship_shots"]["Insert"];
 
-export const battleshipSubs = {
-  insert: (client: SupabaseClient<Database>, row: BattleshipSubInsert) =>
-    client.from("battleship_subs").upsert(row as never, { onConflict: "room_id,player_id" }),
+export const battleshipBoards = {
+  upsert: (client: SupabaseClient<Database>, row: BattleshipBoardInsert) =>
+    client.from("battleship_boards").upsert(row as never, { onConflict: "room_id,player_id" }),
   fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
-    client.from("battleship_subs").select("*").eq("room_id", roomId),
+    client.from("battleship_boards").select("*").eq("room_id", roomId),
+  fetchByRoomAndPlayer: (client: SupabaseClient<Database>, roomId: string, playerId: string) =>
+    client.from("battleship_boards").select("*").eq("room_id", roomId).eq("player_id", playerId).maybeSingle(),
 };
 
 export const battleshipShots = {
@@ -142,4 +144,6 @@ export const battleshipShots = {
     client.from("battleship_shots").insert(row as never),
   fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
     client.from("battleship_shots").select("*").eq("room_id", roomId),
+  fetchByRoomAndTarget: (client: SupabaseClient<Database>, roomId: string, targetId: string) =>
+    client.from("battleship_shots").select("*").eq("room_id", roomId).eq("target_id", targetId),
 };
