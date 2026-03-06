@@ -93,6 +93,10 @@ export function GameSelectionView({
     gameName: string;
   } | null>(null);
   const transitionTriggeredRef = useRef(false);
+  const votesRef = useRef(votes);
+  const playersRef = useRef(players);
+  votesRef.current = votes;
+  playersRef.current = players;
 
   const hasVoted = votes.some((v) => v.player_id === localPlayerId);
   const voteCount = useCallback(
@@ -104,12 +108,16 @@ export function GameSelectionView({
     players.length > 0 && votes.length > 0 && votes.length === players.length;
 
   // Host-only: when everyone has voted, show overlay then after delay update room.
+  // Note: isHost is from parent (room.host_id === playerId from store); don't use myPlayerInRoom.id vs host_id.
+  // Use refs for votes/players so effect doesn't re-run on their change and cancel the timeout.
   useEffect(() => {
-    if (!isHost || room.host_id !== localPlayerId) return;
+    if (!isHost) return;
     if (!everyoneVoted || transitionTriggeredRef.current) return;
 
     transitionTriggeredRef.current = true;
-    const winningGameId = getWinningGameId(votes);
+    const currentVotes = votesRef.current;
+    const currentPlayers = playersRef.current;
+    const winningGameId = getWinningGameId(currentVotes);
     const gameName = GAMES.find((g) => g.id === winningGameId)?.label ?? winningGameId;
 
     setTransitionOverlay({ gameId: winningGameId, gameName });
@@ -118,7 +126,7 @@ export function GameSelectionView({
       setStartError(null);
       try {
         const newRoundId = crypto.randomUUID();
-        const gameState = buildGameState(winningGameId, players, newRoundId);
+        const gameState = buildGameState(winningGameId, playersRef.current, newRoundId);
         const { error } = await roomsApi.updateStatusAndGame(
           supabase,
           room.id,
@@ -140,16 +148,7 @@ export function GameSelectionView({
     }, TRANSITION_DELAY_MS);
 
     return () => window.clearTimeout(timeoutId);
-  }, [
-    isHost,
-    room.host_id,
-    room.id,
-    localPlayerId,
-    everyoneVoted,
-    votes,
-    players,
-    supabase,
-  ]);
+  }, [isHost, room.id, everyoneVoted, supabase]);
 
   // Non-host: show same overlay when everyone voted (same winner computed for display).
   useEffect(() => {
