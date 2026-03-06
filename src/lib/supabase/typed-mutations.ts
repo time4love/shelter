@@ -60,6 +60,8 @@ export const rooms = {
       .eq("id", roomId),
 };
 
+type PlayerUpdate = Database["public"]["Tables"]["players"]["Update"];
+
 export const players = {
   upsert: (
     client: SupabaseClient<Database>,
@@ -67,6 +69,14 @@ export const players = {
     options: { onConflict: string } = { onConflict: "room_id,client_id" }
   ) =>
     client.from("players").upsert(row as never, options as never),
+
+  /** Update a player by id (e.g. score). Use partial Update type to satisfy client inference. */
+  update: (
+    client: SupabaseClient<Database>,
+    playerId: string,
+    updates: PlayerUpdate
+  ) =>
+    client.from("players").update(updates as never).eq("id", playerId),
 };
 
 export const gameVotes = {

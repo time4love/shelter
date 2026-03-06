@@ -7,7 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { useTolStatements } from "@/hooks/useTolStatements";
 import { useTolGuessesForAuthor } from "@/hooks/useTolGuessesForAuthor";
-import { rooms as roomsApi, tolGuesses as tolGuessesApi } from "@/lib/supabase/typed-mutations";
+import { rooms as roomsApi, players as playersApi, tolGuesses as tolGuessesApi } from "@/lib/supabase/typed-mutations";
 import { seededShuffle } from "@/lib/utils/seededShuffle";
 
 export interface TolPlayingPhaseProps {
@@ -88,7 +88,7 @@ export function TolPlayingPhase({
         players.map((p) => {
           const newScore = scoreDeltas[p.id] ?? p.score;
           if (newScore === p.score) return Promise.resolve();
-          return supabase.from("players").update({ score: newScore }).eq("id", p.id);
+          return playersApi.update(supabase, p.id, { score: newScore });
         })
       );
       await roomsApi.updateGameState(supabase, room.id, {
