@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import type { RoomRow, PlayerRow, EretzIrAnswerRow } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import { rooms as roomsApi, eretzIrAnswers as eretzIrAnswersApi, gameVotes as gameVotesApi } from "@/lib/supabase/typed-mutations";
+import { rooms as roomsApi, eretzIrAnswers as eretzIrAnswersApi } from "@/lib/supabase/typed-mutations";
 import { CATEGORIES, CATEGORY_COLORS } from "./constants";
 import { computeScoreForCategory } from "./scoring";
 
@@ -28,10 +28,8 @@ export function EretzIrAsyncResults({
   supabase,
 }: EretzIrAsyncResultsProps) {
   const [isViewing, setIsViewing] = useState(false);
-  const [isDone, setIsDone] = useState(false);
   const [answers, setAnswers] = useState<EretzIrAnswerRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const hasReturnedToSelection = useRef(false);
 
   useEffect(() => {
     if (!roundId) {
@@ -50,28 +48,11 @@ export function EretzIrAsyncResults({
     };
   }, [room.id, roundId, supabase]);
 
-  // Host only: when everyone has marked ready, return to game selection (once)
-  useEffect(() => {
-    if (
-      !isHost ||
-      players.length === 0 ||
-      readyPlayers.length !== players.length ||
-      hasReturnedToSelection.current
-    )
-      return;
-    hasReturnedToSelection.current = true;
-    (async () => {
-      await gameVotesApi.deleteByRoomId(supabase, room.id);
-      await roomsApi.updateToGameSelection(supabase, room.id);
-    })();
-  }, [isHost, room.id, players.length, readyPlayers.length, supabase]);
-
   const handleMarkDone = async () => {
-    setIsDone(true);
     const { data } = await supabase.from("rooms").select("game_state").eq("id", room.id).single();
     const current = (data?.game_state as { readyPlayers?: string[] } | null)?.readyPlayers ?? [];
     const next = Array.from(new Set([...current, myPlayerInRoom.id]));
-    void roomsApi.updateGameState(supabase, room.id, {
+    await roomsApi.updateGameState(supabase, room.id, {
       phase: "async_results",
       readyPlayers: next,
       roundId,
@@ -158,17 +139,15 @@ export function EretzIrAsyncResults({
           );
         })}
       </div>
-      {!isDone && (
-        <div className="sticky bottom-0 z-10 shrink-0 p-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white border-t shadow-md rounded-t-2xl">
-          <button
-            type="button"
-            onClick={handleMarkDone}
-            className="w-full rounded-2xl bg-mint-green py-4 font-bold text-xl text-white shadow-card active:scale-[0.98]"
-          >
-            סיימתי, אני מוכן למשחק הבא ➡️
-          </button>
-        </div>
-      )}
+      <div className="sticky bottom-0 z-10 shrink-0 p-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white border-t shadow-md rounded-t-2xl">
+        <button
+          type="button"
+          onClick={handleMarkDone}
+          className="w-full rounded-2xl bg-mint-green py-4 font-bold text-xl text-white shadow-card active:scale-[0.98]"
+        >
+          סיימתי, אני מוכן למשחק הבא ➡️
+        </button>
+      </div>
     </div>
   );
 }

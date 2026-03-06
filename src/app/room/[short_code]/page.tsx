@@ -148,6 +148,70 @@ export default function RoomPage() {
     );
   }
 
+  const gameState = room.game_state as Record<string, unknown> | null | undefined;
+  const eretzReadyPlayers = (Array.isArray(gameState?.readyPlayers) ? gameState.readyPlayers : []) as string[];
+  const iAmDoneViewingEretz =
+    room.status === "playing" &&
+    myPlayerInRoom &&
+    room.current_game === "eretz_ir" &&
+    gameState?.phase === "async_results" &&
+    eretzReadyPlayers.includes(myPlayerInRoom.id);
+
+  if (iAmDoneViewingEretz) {
+    return (
+      <div className="min-h-screen w-full flex flex-col pb-24 bg-gray-50 pt-16">
+        <TopMenu shortCode={shortCode} />
+        <AudioUnlockBanner />
+        <GameSelectionView
+          room={room}
+          players={players}
+          isHost={isHost}
+          myPlayerInRoom={myPlayerInRoom}
+          supabase={supabase}
+        />
+        <BottomNavBar
+          playerName={playerName ?? ""}
+          playerAvatar={playerAvatar ?? ""}
+          onOpenLeaderboard={() => setLeaderboardOpen(true)}
+          onOpenProfile={() => setProfileOpen(true)}
+          onOpenChat={() => chat.setIsChatOpen(true)}
+          chatHasUnread={chat.hasUnread}
+        />
+        <FloatingChatBubbles bubbles={chat.floatingBubbles} />
+        {chat.isChatOpen && myPlayerInRoom && (
+          <ChatOverlay
+            messages={chat.messages}
+            sendMessage={chat.sendMessage}
+            sendError={chat.error}
+            myPlayerInRoom={myPlayerInRoom}
+            players={players}
+            onClose={() => chat.setIsChatOpen(false)}
+            broadcastSound={broadcastSound}
+            playSound={playSound}
+            supabase={supabase}
+            refetchMyPlayer={refetchMyPlayer}
+          />
+        )}
+        <GlobalLeaderboard
+          players={players}
+          open={leaderboardOpen}
+          onOpenChange={setLeaderboardOpen}
+        />
+        <ProfileEditModal
+          open={profileOpen}
+          onOpenChange={setProfileOpen}
+          myPlayerInRoom={myPlayerInRoom}
+          playerName={playerName ?? ""}
+          playerAvatar={playerAvatar ?? ""}
+          setPlayerName={setPlayerName}
+          setPlayerAvatar={setPlayerAvatar}
+          supabase={supabase}
+          onSaved={refetchMyPlayer}
+        />
+      </div>
+    );
+  }
+
   if (room.status === "playing" && myPlayerInRoom) {
     return (
       <div className="min-h-screen w-full flex flex-col pb-24 bg-gray-50 pt-16">
