@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import type { RoomRow, PlayerRow } from "@/types/database";
+import type { RoomRow, PlayerRow, EretzIrAnswerRow } from "@/types/database";
 import type { EretzIrAnswersMap } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
@@ -55,7 +55,8 @@ export function EretzIrWritingPhase({
     if (!roundId) return;
     const syncSubmitted = async () => {
       const { data } = await eretzIrAnswersApi.fetchByRoomId(supabase, room.id, roundId);
-      const ids = (data ?? []).map((row) => row.player_id);
+      const rows = (data ?? []) as EretzIrAnswerRow[];
+      const ids = rows.map((row) => row.player_id);
       setSubmittedPlayerIds(ids);
     };
     void syncSubmitted();
