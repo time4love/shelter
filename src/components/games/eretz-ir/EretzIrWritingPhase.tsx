@@ -80,10 +80,11 @@ export function EretzIrWritingPhase({
     };
   }, [room.id, roundId, supabase]);
 
-  // Auto-advance to revealing when all players in the room have submitted
+  // Auto-advance to revealing when all players in the room have submitted (host triggers)
   useEffect(() => {
     if (
       !roundId ||
+      !isHost ||
       players.length === 0 ||
       submittedPlayerIds.length !== players.length ||
       hasAutoAdvanced.current
@@ -92,12 +93,22 @@ export function EretzIrWritingPhase({
     const allSubmitted = players.every((p) => submittedPlayerIds.includes(p.id));
     if (!allSubmitted) return;
     hasAutoAdvanced.current = true;
-    void roomsApi.updateGameState(supabase, room.id, {
-      phase: "revealing",
+    const nextState = {
+      phase: "revealing" as const,
       currentCategoryIndex: 0,
       roundId,
-    });
-  }, [room.id, roundId, players, submittedPlayerIds, supabase]);
+    };
+    roomsApi
+      .updateGameState(supabase, room.id, nextState)
+      .then((res) => {
+        if (res?.error) {
+          hasAutoAdvanced.current = false;
+        }
+      })
+      .catch(() => {
+        hasAutoAdvanced.current = false;
+      });
+  }, [room.id, roundId, isHost, players, submittedPlayerIds, supabase]);
 
   const handleSubmit = async () => {
     if (!roundId) return;
@@ -111,6 +122,9 @@ export function EretzIrWritingPhase({
       });
       if (error) throw error;
       setIsWaiting(true);
+      setSubmittedPlayerIds((prev) =>
+        prev.includes(myPlayerInRoom.id) ? prev : [...prev, myPlayerInRoom.id]
+      );
     } catch {
       setSubmitError("אופס, משהו השתבש. נסה שוב!");
     }
