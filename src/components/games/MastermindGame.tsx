@@ -569,7 +569,8 @@ function MastermindRoundResults({
     setError(null);
     setLoading(true);
     try {
-      await gameVotesApi.deleteByRoomId(supabase, room.id);
+      const { error: errVotes } = await gameVotesApi.deleteByRoomId(supabase, room.id);
+      if (errVotes) throw errVotes;
       const { error: errRoom } = await roomsApi.updateToGameSelection(supabase, room.id);
       if (errRoom) throw errRoom;
     } catch {

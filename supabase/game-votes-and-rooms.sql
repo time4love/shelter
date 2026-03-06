@@ -35,6 +35,10 @@ DROP POLICY IF EXISTS "anon_game_votes_update" ON public.game_votes;
 CREATE POLICY "anon_game_votes_update"
   ON public.game_votes FOR UPDATE TO anon USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "anon_game_votes_delete" ON public.game_votes;
+CREATE POLICY "anon_game_votes_delete"
+  ON public.game_votes FOR DELETE TO anon USING (true);
+
 -- 4. Realtime: REPLICA IDENTITY FULL and add to publication
 ALTER TABLE public.game_votes REPLICA IDENTITY FULL;
 
