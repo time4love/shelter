@@ -58,6 +58,9 @@ export type GameStateBattleship =
     }
   | { phase: "round_results"; winnerId?: string | null; roundId?: string };
 
+/** Player soundboard: up to 3 slots, keys "1" | "2" | "3", values are public URLs */
+export type PlayerSoundsMap = Record<string, string>;
+
 /** Mastermind (בול פגיעה): code color names stored as strings in JSONB */
 export type MastermindColorName = "red" | "blue" | "green" | "yellow" | "orange" | "purple";
 
@@ -114,6 +117,7 @@ export interface Database {
           avatar: string;
           score: number;
           is_host: boolean;
+          sounds: PlayerSoundsMap | null;
           created_at: string;
         };
         Insert: {
@@ -124,6 +128,7 @@ export interface Database {
           avatar: string;
           score?: number;
           is_host?: boolean;
+          sounds?: PlayerSoundsMap | null;
           created_at?: string;
         };
         Update: {
@@ -134,6 +139,7 @@ export interface Database {
           avatar?: string;
           score?: number;
           is_host?: boolean;
+          sounds?: PlayerSoundsMap | null;
           created_at?: string;
         };
       };

@@ -7,7 +7,8 @@ import { usePlayerStore } from "@/store/player-store";
 import { useEnsurePlayerId } from "@/hooks/useEnsurePlayerId";
 import { useRoomAndJoinStatus } from "@/hooks/useRoomAndJoinStatus";
 import { useLobbyPlayers } from "@/hooks/useLobbyPlayers";
-import { GameEngine, GameSelectionView, GlobalLeaderboard, JoinModal, LobbyView, RoomNotFoundView } from "@/components/room";
+import { GameEngine, GameSelectionView, GlobalLeaderboard, GlobalSoundboard, JoinModal, LobbyView, RoomNotFoundView } from "@/components/room";
+import { useRoomAudio } from "@/hooks/useRoomAudio";
 
 /**
  * Room page – strict flow:
@@ -45,6 +46,7 @@ export default function RoomPage() {
 
   const supabase = createBrowserClient();
   const isHost = Boolean(room && playerId && room.host_id === playerId);
+  const { broadcastSound, playSound } = useRoomAudio(room?.id ?? null);
 
   useEffect(() => {
     if (room) setRoomId(room.id);
@@ -95,6 +97,13 @@ export default function RoomPage() {
           supabase={supabase}
         />
         <GlobalLeaderboard players={players} />
+        <GlobalSoundboard
+          myPlayerInRoom={myPlayerInRoom}
+          supabase={supabase}
+          broadcastSound={broadcastSound}
+          playSound={playSound}
+          refetchMyPlayer={refetchMyPlayer}
+        />
       </div>
     );
   }
@@ -110,6 +119,13 @@ export default function RoomPage() {
           supabase={supabase}
         />
         <GlobalLeaderboard players={players} />
+        <GlobalSoundboard
+          myPlayerInRoom={myPlayerInRoom}
+          supabase={supabase}
+          broadcastSound={broadcastSound}
+          playSound={playSound}
+          refetchMyPlayer={refetchMyPlayer}
+        />
       </div>
     );
   }
@@ -124,6 +140,13 @@ export default function RoomPage() {
         supabase={supabase}
       />
       <GlobalLeaderboard players={players} />
+      <GlobalSoundboard
+        myPlayerInRoom={myPlayerInRoom}
+        supabase={supabase}
+        broadcastSound={broadcastSound}
+        playSound={playSound}
+        refetchMyPlayer={refetchMyPlayer}
+      />
     </div>
   );
 }
