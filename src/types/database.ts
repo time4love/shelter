@@ -360,12 +360,36 @@ export interface Database {
           created_at?: string;
         };
       };
+      chat_messages: {
+        Row: {
+          id: string;
+          room_id: string;
+          player_id: string;
+          message: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          room_id: string;
+          player_id: string;
+          message: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          room_id?: string;
+          player_id?: string;
+          message?: string;
+          created_at?: string;
+        };
+      };
     };
   };
 }
 
 export type RoomRow = Database["public"]["Tables"]["rooms"]["Row"];
 export type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
+export type ChatMessageRow = Database["public"]["Tables"]["chat_messages"]["Row"];
 export type GameVoteRow = Database["public"]["Tables"]["game_votes"]["Row"];
 export type TolStatementRow = Database["public"]["Tables"]["tol_statements"]["Row"];
 export type TolGuessRow = Database["public"]["Tables"]["tol_guesses"]["Row"];

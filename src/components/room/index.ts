@@ -15,6 +15,8 @@ export { GlobalSoundboard } from "./GlobalSoundboard";
 export type { GlobalSoundboardProps } from "./GlobalSoundboard";
 export { BottomNavBar } from "./BottomNavBar";
 export type { BottomNavBarProps } from "./BottomNavBar";
+export { ChatOverlay } from "./ChatOverlay";
+export type { ChatOverlayProps } from "./ChatOverlay";
 export { ProfileEditModal } from "./ProfileEditModal";
 export type { ProfileEditModalProps } from "./ProfileEditModal";
 export { VoiceRecorder } from "./VoiceRecorder";

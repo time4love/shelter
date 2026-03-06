@@ -7,7 +7,7 @@ import { usePlayerStore } from "@/store/player-store";
 import { useEnsurePlayerId } from "@/hooks/useEnsurePlayerId";
 import { useRoomAndJoinStatus } from "@/hooks/useRoomAndJoinStatus";
 import { useLobbyPlayers } from "@/hooks/useLobbyPlayers";
-import { AudioUnlockBanner, BottomNavBar, GameEngine, GameSelectionView, GlobalLeaderboard, GlobalSoundboard, JoinModal, LobbyView, ProfileEditModal, RoomNotFoundView, TopMenu } from "@/components/room";
+import { AudioUnlockBanner, BottomNavBar, ChatOverlay, GameEngine, GameSelectionView, GlobalLeaderboard, GlobalSoundboard, JoinModal, LobbyView, ProfileEditModal, RoomNotFoundView, TopMenu } from "@/components/room";
 import { useRoomAudio } from "@/hooks/useRoomAudio";
 
 /**
@@ -51,6 +51,7 @@ export default function RoomPage() {
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [soundboardOpen, setSoundboardOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     if (room) setRoomId(room.id);
@@ -108,7 +109,17 @@ export default function RoomPage() {
           onOpenSoundboard={() => setSoundboardOpen(true)}
           onOpenLeaderboard={() => setLeaderboardOpen(true)}
           onOpenProfile={() => setProfileOpen(true)}
+          onOpenChat={() => setChatOpen(true)}
         />
+        {chatOpen && room && myPlayerInRoom && (
+          <ChatOverlay
+            roomId={room.id}
+            myPlayerInRoom={myPlayerInRoom}
+            players={players}
+            supabase={supabase}
+            onClose={() => setChatOpen(false)}
+          />
+        )}
         <GlobalLeaderboard
           players={players}
           open={leaderboardOpen}
@@ -156,7 +167,17 @@ export default function RoomPage() {
           onOpenSoundboard={() => setSoundboardOpen(true)}
           onOpenLeaderboard={() => setLeaderboardOpen(true)}
           onOpenProfile={() => setProfileOpen(true)}
+          onOpenChat={() => setChatOpen(true)}
         />
+        {chatOpen && room && myPlayerInRoom && (
+          <ChatOverlay
+            roomId={room.id}
+            myPlayerInRoom={myPlayerInRoom}
+            players={players}
+            supabase={supabase}
+            onClose={() => setChatOpen(false)}
+          />
+        )}
         <GlobalLeaderboard
           players={players}
           open={leaderboardOpen}
@@ -205,7 +226,17 @@ export default function RoomPage() {
             onOpenSoundboard={() => setSoundboardOpen(true)}
             onOpenLeaderboard={() => setLeaderboardOpen(true)}
             onOpenProfile={() => setProfileOpen(true)}
+            onOpenChat={() => setChatOpen(true)}
           />
+          {chatOpen && room && myPlayerInRoom && (
+            <ChatOverlay
+              roomId={room.id}
+              myPlayerInRoom={myPlayerInRoom}
+              players={players}
+              supabase={supabase}
+              onClose={() => setChatOpen(false)}
+            />
+          )}
           <GlobalLeaderboard
             players={players}
             open={leaderboardOpen}

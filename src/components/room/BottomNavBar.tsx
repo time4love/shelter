@@ -1,6 +1,6 @@
 "use client";
 
-import { Megaphone, Trophy } from "lucide-react";
+import { Megaphone, MessageCircle, Trophy } from "lucide-react";
 
 export interface BottomNavBarProps {
   /** Current player display name */
@@ -13,6 +13,8 @@ export interface BottomNavBarProps {
   onOpenLeaderboard: () => void;
   /** Opens the Profile Edit modal */
   onOpenProfile: () => void;
+  /** Opens the Chat overlay */
+  onOpenChat?: () => void;
 }
 
 /**
@@ -25,6 +27,7 @@ export function BottomNavBar({
   onOpenSoundboard,
   onOpenLeaderboard,
   onOpenProfile,
+  onOpenChat,
 }: BottomNavBarProps) {
   return (
     <nav
@@ -33,12 +36,12 @@ export function BottomNavBar({
       lang="he"
       aria-label="ניווט תחתון"
     >
-      <div className="flex justify-around items-center h-16 px-4">
+      <div className="flex justify-around items-center h-16 px-2">
         {/* Right (RTL first): Soundboard */}
         <button
           type="button"
           onClick={onOpenSoundboard}
-          className="flex flex-col items-center justify-center gap-0.5 min-w-[64px] h-14 rounded-2xl text-mint-green hover:bg-mint-green/15 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2"
+          className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-14 rounded-2xl text-mint-green hover:bg-mint-green/15 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-mint-green focus:ring-offset-2"
           aria-label="לוח צלילים"
         >
           <Megaphone className="h-7 w-7" strokeWidth={2} />
@@ -63,16 +66,29 @@ export function BottomNavBar({
           </span>
         </button>
 
-        {/* Left (RTL last): Leaderboard */}
-        <button
-          type="button"
-          onClick={onOpenLeaderboard}
-          className="flex flex-col items-center justify-center gap-0.5 min-w-[64px] h-14 rounded-2xl text-playful-yellow hover:bg-playful-yellow/15 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-playful-yellow focus:ring-offset-2"
-          aria-label="טבלת ליגה"
-        >
-          <Trophy className="h-7 w-7" strokeWidth={2} />
-          <span className="text-[10px] font-medium text-foreground/70">ליגה</span>
-        </button>
+        {/* Left (RTL last): Trophy + Chat */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onOpenLeaderboard}
+            className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-14 rounded-2xl text-playful-yellow hover:bg-playful-yellow/15 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-playful-yellow focus:ring-offset-2"
+            aria-label="טבלת ליגה"
+          >
+            <Trophy className="h-7 w-7" strokeWidth={2} />
+            <span className="text-[10px] font-medium text-foreground/70">ליגה</span>
+          </button>
+          {onOpenChat && (
+            <button
+              type="button"
+              onClick={onOpenChat}
+              className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-14 rounded-2xl text-sky-blue hover:bg-sky-blue/15 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-sky-blue focus:ring-offset-2"
+              aria-label="צ'אט הקבוצה"
+            >
+              <MessageCircle className="h-7 w-7" strokeWidth={2} />
+              <span className="text-[10px] font-medium text-foreground/70">צ'אט</span>
+            </button>
+          )}
+        </div>
       </div>
     </nav>
   );
