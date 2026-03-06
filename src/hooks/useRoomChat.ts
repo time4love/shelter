@@ -57,13 +57,13 @@ export function useRoomChat(
     let cancelled = false;
     const supabase = createBrowserClient();
     async function fetchMessages() {
-      const { data, err } = await supabase
+      const { data, error: fetchErr } = await supabase
         .from("chat_messages")
         .select("*")
         .eq("room_id", roomId)
         .order("created_at", { ascending: true });
       if (cancelled) return;
-      if (err) {
+      if (fetchErr) {
         setError("אופס, משהו השתבש. נסה שוב!");
         return;
       }
