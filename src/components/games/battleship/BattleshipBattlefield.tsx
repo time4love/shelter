@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { RoomRow, PlayerRow, BattleshipBoardRow, BattleshipShotRow, BattleshipShip } from "@/types/database";
+import type { RoomRow, PlayerRow, BattleshipBoardRow, BattleshipShotRow } from "@/types/database";
 import type { GameStateBattleship } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
@@ -17,10 +17,6 @@ export interface BattleshipBattlefieldProps {
   isHost: boolean;
   gameState: Extract<GameStateBattleship, { phase: "playing" }>;
   supabase: SupabaseClient<Database>;
-}
-
-function isShipSunk(ship: BattleshipShip, hitCells: Set<number>): boolean {
-  return ship.cells.every((c) => hitCells.has(c));
 }
 
 export function BattleshipBattlefield({
@@ -74,21 +70,18 @@ export function BattleshipBattlefield({
 
   const targetBoard = boards.find((b) => b.player_id === currentTargetId);
   const shotsOnTarget = shots.filter((s) => s.target_id === currentTargetId);
-  const hitCellsTarget = new Set(shotsOnTarget.filter((s) => s.is_hit).map((s) => s.cell_index));
   const shotCellsTarget = new Set(shotsOnTarget.map((s) => s.cell_index));
 
-  const showShipsOnBoard =
-    myPlayerInRoom.id === currentTargetId ||
-    (targetBoard?.ships && targetBoard.ships.some((ship) => isShipSunk(ship, hitCellsTarget)));
+  // Show ship positions ONLY on the player's own board — never reveal opponent's ships
+  const isViewingOwnBoard = myPlayerInRoom.id === currentTargetId;
 
   const cells = new Map<number, CellState>();
   shotsOnTarget.forEach((s) => {
     if (s.is_hit) cells.set(s.cell_index, { kind: "hit", hitPlayerId: currentTargetId });
     else cells.set(s.cell_index, { kind: "water" });
   });
-  if (showShipsOnBoard && targetBoard?.ships) {
+  if (isViewingOwnBoard && targetBoard?.ships) {
     targetBoard.ships.forEach((ship) => {
-      const sunk = isShipSunk(ship, hitCellsTarget);
       ship.cells.forEach((c) => {
         if (!cells.has(c)) cells.set(c, { kind: "sub" });
       });
