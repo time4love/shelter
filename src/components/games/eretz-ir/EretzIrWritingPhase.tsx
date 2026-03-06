@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { RoomRow, PlayerRow } from "@/types/database";
 import type { EretzIrAnswersMap } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -22,8 +22,13 @@ const INITIAL_ANSWERS: EretzIrAnswersMap = Object.fromEntries(
   CATEGORIES.map((c) => [c, ""])
 );
 
+function getPlayerName(players: PlayerRow[], playerId: string): string {
+  return players.find((p) => p.id === playerId)?.name ?? "שחקן";
+}
+
 export function EretzIrWritingPhase({
   room,
+  players,
   myPlayerInRoom,
   isHost,
   letter,
@@ -34,6 +39,8 @@ export function EretzIrWritingPhase({
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isWaiting, setIsWaiting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submittedPlayerIds, setSubmittedPlayerIds] = useState<string[]>([]);
+  const hasAutoAdvanced = useRef(false);
 
   const category = CATEGORIES[currentCardIndex];
   const bgColor = CATEGORY_COLORS[currentCardIndex];
@@ -42,6 +49,54 @@ export function EretzIrWritingPhase({
   const setAnswer = useCallback((cat: string, value: string) => {
     setAnswers((prev) => ({ ...prev, [cat]: value }));
   }, []);
+
+  // Fetch and subscribe to who has submitted for this round
+  useEffect(() => {
+    if (!roundId) return;
+    const syncSubmitted = async () => {
+      const { data } = await eretzIrAnswersApi.fetchByRoomId(supabase, room.id, roundId);
+      const ids = (data ?? []).map((row) => row.player_id);
+      setSubmittedPlayerIds(ids);
+    };
+    void syncSubmitted();
+    const channel = supabase
+      .channel(`eretz_ir_answers:${room.id}:${roundId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "eretz_ir_answers",
+          filter: `room_id=eq.${room.id}`,
+        },
+        () => {
+          void syncSubmitted();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [room.id, roundId, supabase]);
+
+  // Auto-advance to revealing when all players in the room have submitted
+  useEffect(() => {
+    if (
+      !roundId ||
+      players.length === 0 ||
+      submittedPlayerIds.length !== players.length ||
+      hasAutoAdvanced.current
+    )
+      return;
+    const allSubmitted = players.every((p) => submittedPlayerIds.includes(p.id));
+    if (!allSubmitted) return;
+    hasAutoAdvanced.current = true;
+    void roomsApi.updateGameState(supabase, room.id, {
+      phase: "revealing",
+      currentCategoryIndex: 0,
+      roundId,
+    });
+  }, [room.id, roundId, players, submittedPlayerIds, supabase]);
 
   const handleSubmit = async () => {
     if (!roundId) return;
@@ -69,14 +124,32 @@ export function EretzIrWritingPhase({
   }
 
   if (isWaiting) {
+    const allDone = players.length > 0 && submittedPlayerIds.length >= players.length;
     return (
       <div
         className="w-full flex flex-col items-center justify-center gap-4 px-6 py-8"
         dir="rtl"
         lang="he"
       >
-        <p className="text-xl font-medium text-foreground">ממתין לשאר...</p>
-        {isHost && (
+        <p className="text-xl font-medium text-foreground">
+          {allDone ? "כולם סיימו! מעבר לתוצאות..." : "ממתין לשאר..."}
+        </p>
+        <div className="w-full max-w-xs rounded-2xl bg-white/80 shadow-soft px-4 py-3">
+          <p className="mb-2 text-sm font-bold text-foreground/80">סיימו את התשובות:</p>
+          <ul className="flex flex-col gap-1" aria-label="שחקנים שסיימו">
+            {submittedPlayerIds.length === 0 ? (
+              <li className="text-foreground/70">עדיין אף אחד</li>
+            ) : (
+              submittedPlayerIds.map((playerId) => (
+                <li key={playerId} className="flex items-center gap-2 text-foreground">
+                  <span className="h-2 w-2 rounded-full bg-mint-green" aria-hidden />
+                  {getPlayerName(players, playerId)}
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+        {isHost && !allDone && (
           <button
             type="button"
             onClick={handleHostStop}
