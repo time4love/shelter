@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import type { GameStateTOL } from "@/types/database";
+import type { GameStateTOL, GameStateEretzIr } from "@/types/database";
 
 type RoomInsert = Database["public"]["Tables"]["rooms"]["Insert"];
 type RoomUpdate = Database["public"]["Tables"]["rooms"]["Update"];
@@ -10,6 +10,8 @@ type GameVoteInsert = Database["public"]["Tables"]["game_votes"]["Insert"];
 type GameVoteUpsert = GameVoteInsert & Partial<Database["public"]["Tables"]["game_votes"]["Update"]>;
 type TolStatementInsert = Database["public"]["Tables"]["tol_statements"]["Insert"];
 type TolGuessInsert = Database["public"]["Tables"]["tol_guesses"]["Insert"];
+type EretzIrAnswerInsert = Database["public"]["Tables"]["eretz_ir_answers"]["Insert"];
+type EretzIrAnswerUpsert = EretzIrAnswerInsert & Partial<Database["public"]["Tables"]["eretz_ir_answers"]["Update"]>;
 
 export type RoomInsertResult = { data: { id: string } | null; error: unknown };
 
@@ -34,7 +36,7 @@ export const rooms = {
     roomId: string,
     status: RoomUpdate["status"],
     currentGame: RoomUpdate["current_game"],
-    gameState?: GameStateTOL
+    gameState?: GameStateTOL | GameStateEretzIr
   ) =>
     client
       .from("rooms")
@@ -48,7 +50,7 @@ export const rooms = {
   updateGameState: (
     client: SupabaseClient<Database>,
     roomId: string,
-    gameState: GameStateTOL
+    gameState: GameStateTOL | GameStateEretzIr
   ) =>
     client.from("rooms").update({ game_state: gameState } as never).eq("id", roomId),
 
@@ -111,4 +113,16 @@ export const tolGuesses = {
     row: TolGuessInsert
   ) =>
     client.from("tol_guesses").insert(row as never),
+};
+
+export const eretzIrAnswers = {
+  upsert: (
+    client: SupabaseClient<Database>,
+    row: EretzIrAnswerUpsert,
+    options: { onConflict: string } = { onConflict: "room_id,player_id" }
+  ) =>
+    client.from("eretz_ir_answers").upsert(row as never, options as never),
+
+  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
+    client.from("eretz_ir_answers").select("*").eq("room_id", roomId),
 };

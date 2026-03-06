@@ -18,7 +18,7 @@ export interface GameSelectionViewProps {
 
 const GAMES: { id: GameId; label: string; icon: string }[] = [
   { id: "truth_or_lie", label: "אמת או שקר", icon: "🎭" },
-  { id: "the_imposter", label: "המתחזה", icon: "🕵️‍♂️" },
+  { id: "eretz_ir", label: "ארץ עיר", icon: "🌍" },
 ];
 
 export function GameSelectionView({
@@ -63,8 +63,8 @@ export function GameSelectionView({
 
   function getWinningGameId(): GameId {
     const truth = voteCount("truth_or_lie");
-    const imposter = voteCount("the_imposter");
-    if (imposter > truth) return "the_imposter";
+    const eretzIr = voteCount("eretz_ir");
+    if (eretzIr > truth) return "eretz_ir";
     return "truth_or_lie";
   }
 
@@ -74,7 +74,11 @@ export function GameSelectionView({
     try {
       const winningGame = getWinningGameId();
       const gameState =
-        winningGame === "truth_or_lie" ? ({ phase: "writing" } as const) : undefined;
+        winningGame === "truth_or_lie"
+          ? ({ phase: "writing" } as const)
+          : winningGame === "eretz_ir"
+            ? ({ phase: "rolling" } as const)
+            : undefined;
       const { error } = await roomsApi.updateStatusAndGame(
         supabase,
         room.id,

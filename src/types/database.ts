@@ -12,7 +12,7 @@ export type Json =
 
 export type RoomStatus = "lobby" | "game_selection" | "playing" | "results";
 
-export type GameId = "truth_or_lie" | "the_imposter";
+export type GameId = "truth_or_lie" | "the_imposter" | "eretz_ir";
 
 /** Truth or Lie: one statement entry in the statements array */
 export type TolStatementItem = { text: string; isTruth: boolean };
@@ -31,6 +31,16 @@ export type GameStateTOL =
       authorsLeft: string[];
     }
   | { phase: "round_results" };
+
+/** Room.game_state for Eretz Ir (ארץ עיר) */
+export type GameStateEretzIr =
+  | { phase: "rolling" }
+  | { phase: "writing"; letter: string }
+  | { phase: "revealing"; currentCategoryIndex: number }
+  | { phase: "round_results" };
+
+/** Eretz Ir: answers object - keys are category names, values are typed words */
+export type EretzIrAnswersMap = Record<string, string>;
 
 export interface Database {
   public: {
@@ -168,6 +178,29 @@ export interface Database {
           created_at?: string;
         };
       };
+      eretz_ir_answers: {
+        Row: {
+          id: string;
+          room_id: string;
+          player_id: string;
+          answers: EretzIrAnswersMap;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          room_id: string;
+          player_id: string;
+          answers?: EretzIrAnswersMap;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          room_id?: string;
+          player_id?: string;
+          answers?: EretzIrAnswersMap;
+          created_at?: string;
+        };
+      };
     };
   };
 }
@@ -177,3 +210,4 @@ export type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
 export type GameVoteRow = Database["public"]["Tables"]["game_votes"]["Row"];
 export type TolStatementRow = Database["public"]["Tables"]["tol_statements"]["Row"];
 export type TolGuessRow = Database["public"]["Tables"]["tol_guesses"]["Row"];
+export type EretzIrAnswerRow = Database["public"]["Tables"]["eretz_ir_answers"]["Row"];

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "משחק בממ״ד - Shelter",
-  description: "משחק מסיבה בזמן אמת לילדים",
+  description: "משחקי חברה בזמן אמת לילדים ולילדים בנפשם",
 };
 
 export default function RootLayout({

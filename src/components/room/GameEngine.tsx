@@ -4,7 +4,7 @@ import type { RoomRow, PlayerRow } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { TruthOrLieGame } from "@/components/games/TruthOrLieGame";
-import { TheImposterGame } from "@/components/games/TheImposterGame";
+import { EretzIrGame } from "@/components/games/EretzIrGame";
 
 export interface GameEngineProps {
   room: RoomRow;
@@ -39,8 +39,16 @@ export function GameEngine({
     );
   }
 
-  if (currentGame === "the_imposter") {
-    return <TheImposterGame />;
+  if (currentGame === "eretz_ir") {
+    return (
+      <EretzIrGame
+        room={room}
+        players={players}
+        myPlayerInRoom={myPlayerInRoom}
+        isHost={isHost}
+        supabase={supabase}
+      />
+    );
   }
 
   return (
