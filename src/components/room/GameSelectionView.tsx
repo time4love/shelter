@@ -20,6 +20,7 @@ const GAMES: { id: GameId; label: string; icon: string }[] = [
   { id: "truth_or_lie", label: "אמת או שקר", icon: "🎭" },
   { id: "eretz_ir", label: "ארץ עיר", icon: "🌍" },
   { id: "battleship", label: "צוללות", icon: "🚢" },
+  { id: "mastermind", label: "בול פגיעה", icon: "🎯" },
 ];
 
 export function GameSelectionView({
@@ -66,7 +67,9 @@ export function GameSelectionView({
     const truth = voteCount("truth_or_lie");
     const eretzIr = voteCount("eretz_ir");
     const battleship = voteCount("battleship");
-    const max = Math.max(truth, eretzIr, battleship);
+    const mastermind = voteCount("mastermind");
+    const max = Math.max(truth, eretzIr, battleship, mastermind);
+    if (mastermind === max) return "mastermind";
     if (battleship === max) return "battleship";
     if (eretzIr === max) return "eretz_ir";
     return "truth_or_lie";
@@ -83,14 +86,23 @@ export function GameSelectionView({
     setStarting(true);
     try {
       const winningGame = getWinningGameId();
-      const gameState =
-        winningGame === "truth_or_lie"
-          ? ({ phase: "writing" } as const)
-          : winningGame === "eretz_ir"
-            ? ({ phase: "rolling" } as const)
-            : winningGame === "battleship"
-              ? ({ phase: "hiding", gridSize: battleshipGridSize(players.length) } as const)
-              : undefined;
+      let gameState:
+        | { phase: "writing" }
+        | { phase: "rolling" }
+        | { phase: "hiding"; gridSize: number }
+        | { phase: "setting"; setterId: string }
+        | undefined;
+      if (winningGame === "truth_or_lie") {
+        gameState = { phase: "writing" };
+      } else if (winningGame === "eretz_ir") {
+        gameState = { phase: "rolling" };
+      } else if (winningGame === "battleship") {
+        gameState = { phase: "hiding", gridSize: battleshipGridSize(players.length) };
+      } else if (winningGame === "mastermind") {
+        const randomIndex = Math.floor(Math.random() * players.length);
+        const setterId = players[randomIndex]?.id ?? players[0]!.id;
+        gameState = { phase: "setting", setterId };
+      }
       const { error } = await roomsApi.updateStatusAndGame(
         supabase,
         room.id,

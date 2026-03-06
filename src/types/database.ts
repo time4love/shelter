@@ -12,7 +12,7 @@ export type Json =
 
 export type RoomStatus = "lobby" | "game_selection" | "playing" | "results";
 
-export type GameId = "truth_or_lie" | "the_imposter" | "eretz_ir" | "battleship";
+export type GameId = "truth_or_lie" | "the_imposter" | "eretz_ir" | "battleship" | "mastermind";
 
 /** Truth or Lie: one statement entry in the statements array */
 export type TolStatementItem = { text: string; isTruth: boolean };
@@ -56,6 +56,20 @@ export type GameStateBattleship =
       alivePlayers: string[];
     }
   | { phase: "round_results"; winnerId?: string | null };
+
+/** Mastermind (בול פגיעה): code color names stored as strings in JSONB */
+export type MastermindColorName = "red" | "blue" | "green" | "yellow" | "orange" | "purple";
+
+/** Room.game_state for Mastermind */
+export type GameStateMastermind =
+  | { phase: "setting"; setterId: string }
+  | {
+      phase: "playing";
+      setterId: string;
+      currentTurnId: string;
+      guessersQueue: string[];
+    }
+  | { phase: "round_results"; setterId: string; winnerId?: string | null };
 
 export interface Database {
   public: {
@@ -268,6 +282,58 @@ export interface Database {
           created_at?: string;
         };
       };
+      mastermind_codes: {
+        Row: {
+          id: string;
+          room_id: string;
+          setter_id: string;
+          code: string[];
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          room_id: string;
+          setter_id: string;
+          code: string[];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          room_id?: string;
+          setter_id?: string;
+          code?: string[];
+          created_at?: string;
+        };
+      };
+      mastermind_guesses: {
+        Row: {
+          id: string;
+          room_id: string;
+          guesser_id: string;
+          guess: string[];
+          bulls: number;
+          hits: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          room_id: string;
+          guesser_id: string;
+          guess: string[];
+          bulls: number;
+          hits: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          room_id?: string;
+          guesser_id?: string;
+          guess?: string[];
+          bulls?: number;
+          hits?: number;
+          created_at?: string;
+        };
+      };
     };
   };
 }
@@ -280,3 +346,5 @@ export type TolGuessRow = Database["public"]["Tables"]["tol_guesses"]["Row"];
 export type EretzIrAnswerRow = Database["public"]["Tables"]["eretz_ir_answers"]["Row"];
 export type BattleshipBoardRow = Database["public"]["Tables"]["battleship_boards"]["Row"];
 export type BattleshipShotRow = Database["public"]["Tables"]["battleship_shots"]["Row"];
+export type MastermindCodeRow = Database["public"]["Tables"]["mastermind_codes"]["Row"];
+export type MastermindGuessRow = Database["public"]["Tables"]["mastermind_guesses"]["Row"];

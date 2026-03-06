@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import type { GameStateTOL, GameStateEretzIr, GameStateBattleship } from "@/types/database";
+import type { GameStateTOL, GameStateEretzIr, GameStateBattleship, GameStateMastermind } from "@/types/database";
 
 type RoomInsert = Database["public"]["Tables"]["rooms"]["Insert"];
 type RoomUpdate = Database["public"]["Tables"]["rooms"]["Update"];
@@ -36,7 +36,7 @@ export const rooms = {
     roomId: string,
     status: RoomUpdate["status"],
     currentGame: RoomUpdate["current_game"],
-    gameState?: GameStateTOL | GameStateEretzIr | GameStateBattleship
+    gameState?: GameStateTOL | GameStateEretzIr | GameStateBattleship | GameStateMastermind
   ) =>
     client
       .from("rooms")
@@ -50,7 +50,7 @@ export const rooms = {
   updateGameState: (
     client: SupabaseClient<Database>,
     roomId: string,
-    gameState: GameStateTOL | GameStateEretzIr | GameStateBattleship
+    gameState: GameStateTOL | GameStateEretzIr | GameStateBattleship | GameStateMastermind
   ) =>
     client.from("rooms").update({ game_state: gameState } as never).eq("id", roomId),
 
@@ -129,6 +129,8 @@ export const eretzIrAnswers = {
 
 type BattleshipBoardInsert = Database["public"]["Tables"]["battleship_boards"]["Insert"];
 type BattleshipShotInsert = Database["public"]["Tables"]["battleship_shots"]["Insert"];
+type MastermindCodeInsert = Database["public"]["Tables"]["mastermind_codes"]["Insert"];
+type MastermindGuessInsert = Database["public"]["Tables"]["mastermind_guesses"]["Insert"];
 
 export const battleshipBoards = {
   upsert: (client: SupabaseClient<Database>, row: BattleshipBoardInsert) =>
@@ -146,4 +148,18 @@ export const battleshipShots = {
     client.from("battleship_shots").select("*").eq("room_id", roomId),
   fetchByRoomAndTarget: (client: SupabaseClient<Database>, roomId: string, targetId: string) =>
     client.from("battleship_shots").select("*").eq("room_id", roomId).eq("target_id", targetId),
+};
+
+export const mastermindCodes = {
+  insert: (client: SupabaseClient<Database>, row: MastermindCodeInsert) =>
+    client.from("mastermind_codes").insert(row as never),
+  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
+    client.from("mastermind_codes").select("*").eq("room_id", roomId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+};
+
+export const mastermindGuesses = {
+  insert: (client: SupabaseClient<Database>, row: MastermindGuessInsert) =>
+    client.from("mastermind_guesses").insert(row as never),
+  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
+    client.from("mastermind_guesses").select("*").eq("room_id", roomId).order("created_at", { ascending: true }),
 };

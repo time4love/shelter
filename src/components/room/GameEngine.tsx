@@ -6,6 +6,7 @@ import type { Database } from "@/types/database";
 import { TruthOrLieGame } from "@/components/games/TruthOrLieGame";
 import { EretzIrGame } from "@/components/games/EretzIrGame";
 import { BattleshipGame } from "@/components/games/BattleshipGame";
+import { MastermindGame } from "@/components/games/MastermindGame";
 
 export interface GameEngineProps {
   room: RoomRow;
@@ -55,6 +56,18 @@ export function GameEngine({
   if (currentGame === "battleship") {
     return (
       <BattleshipGame
+        room={room}
+        players={players}
+        myPlayerInRoom={myPlayerInRoom}
+        isHost={isHost}
+        supabase={supabase}
+      />
+    );
+  }
+
+  if (currentGame === "mastermind") {
+    return (
+      <MastermindGame
         room={room}
         players={players}
         myPlayerInRoom={myPlayerInRoom}
