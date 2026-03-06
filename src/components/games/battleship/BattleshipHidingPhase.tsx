@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { RoomRow, PlayerRow } from "@/types/database";
+import type { RoomRow, PlayerRow, BattleshipSubRow } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { rooms as roomsApi, battleshipSubs } from "@/lib/supabase/typed-mutations";
@@ -33,7 +33,7 @@ export function BattleshipHidingPhase({
   useEffect(() => {
     const fetchSubs = async () => {
       const { data } = await battleshipSubs.fetchByRoomId(supabase, room.id);
-      const list = data ?? [];
+      const list: BattleshipSubRow[] = (data ?? []) as BattleshipSubRow[];
       setSubsCount(list.length);
       setHasMySub(list.some((row) => row.player_id === myPlayerInRoom.id));
     };
