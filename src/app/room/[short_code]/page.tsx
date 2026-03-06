@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { usePlayerStore } from "@/store/player-store";
 import { useEnsurePlayerId } from "@/hooks/useEnsurePlayerId";
 import { useRoomAndJoinStatus } from "@/hooks/useRoomAndJoinStatus";
 import { useLobbyPlayers } from "@/hooks/useLobbyPlayers";
-import { AudioUnlockBanner, GameEngine, GameSelectionView, GlobalLeaderboard, GlobalSoundboard, JoinModal, LobbyView, RoomNotFoundView } from "@/components/room";
+import { AudioUnlockBanner, BottomNavBar, GameEngine, GameSelectionView, GlobalLeaderboard, GlobalSoundboard, JoinModal, LobbyView, ProfileEditModal, RoomNotFoundView } from "@/components/room";
 import { useRoomAudio } from "@/hooks/useRoomAudio";
 
 /**
@@ -47,6 +47,10 @@ export default function RoomPage() {
   const supabase = createBrowserClient();
   const isHost = Boolean(room && playerId && room.host_id === playerId);
   const { broadcastSound, playSound } = useRoomAudio(room?.id ?? null);
+
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [soundboardOpen, setSoundboardOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     if (room) setRoomId(room.id);
@@ -97,13 +101,37 @@ export default function RoomPage() {
           myPlayerInRoom={myPlayerInRoom}
           supabase={supabase}
         />
-        <GlobalLeaderboard players={players} />
+        <BottomNavBar
+          playerName={playerName ?? ""}
+          playerAvatar={playerAvatar ?? ""}
+          onOpenSoundboard={() => setSoundboardOpen(true)}
+          onOpenLeaderboard={() => setLeaderboardOpen(true)}
+          onOpenProfile={() => setProfileOpen(true)}
+        />
+        <GlobalLeaderboard
+          players={players}
+          open={leaderboardOpen}
+          onOpenChange={setLeaderboardOpen}
+        />
         <GlobalSoundboard
           myPlayerInRoom={myPlayerInRoom}
           supabase={supabase}
           broadcastSound={broadcastSound}
           playSound={playSound}
           refetchMyPlayer={refetchMyPlayer}
+          open={soundboardOpen}
+          onOpenChange={setSoundboardOpen}
+        />
+        <ProfileEditModal
+          open={profileOpen}
+          onOpenChange={setProfileOpen}
+          myPlayerInRoom={myPlayerInRoom}
+          playerName={playerName ?? ""}
+          playerAvatar={playerAvatar ?? ""}
+          setPlayerName={setPlayerName}
+          setPlayerAvatar={setPlayerAvatar}
+          supabase={supabase}
+          onSaved={refetchMyPlayer}
         />
       </div>
     );
@@ -120,13 +148,37 @@ export default function RoomPage() {
           isHost={isHost}
           supabase={supabase}
         />
-        <GlobalLeaderboard players={players} />
+        <BottomNavBar
+          playerName={playerName ?? ""}
+          playerAvatar={playerAvatar ?? ""}
+          onOpenSoundboard={() => setSoundboardOpen(true)}
+          onOpenLeaderboard={() => setLeaderboardOpen(true)}
+          onOpenProfile={() => setProfileOpen(true)}
+        />
+        <GlobalLeaderboard
+          players={players}
+          open={leaderboardOpen}
+          onOpenChange={setLeaderboardOpen}
+        />
         <GlobalSoundboard
           myPlayerInRoom={myPlayerInRoom}
           supabase={supabase}
           broadcastSound={broadcastSound}
           playSound={playSound}
           refetchMyPlayer={refetchMyPlayer}
+          open={soundboardOpen}
+          onOpenChange={setSoundboardOpen}
+        />
+        <ProfileEditModal
+          open={profileOpen}
+          onOpenChange={setProfileOpen}
+          myPlayerInRoom={myPlayerInRoom}
+          playerName={playerName ?? ""}
+          playerAvatar={playerAvatar ?? ""}
+          setPlayerName={setPlayerName}
+          setPlayerAvatar={setPlayerAvatar}
+          supabase={supabase}
+          onSaved={refetchMyPlayer}
         />
       </div>
     );
@@ -142,14 +194,42 @@ export default function RoomPage() {
         isHost={isHost}
         supabase={supabase}
       />
-      <GlobalLeaderboard players={players} />
-      <GlobalSoundboard
-        myPlayerInRoom={myPlayerInRoom}
-        supabase={supabase}
-        broadcastSound={broadcastSound}
-        playSound={playSound}
-        refetchMyPlayer={refetchMyPlayer}
-      />
+      {myPlayerInRoom && (
+        <>
+          <BottomNavBar
+            playerName={playerName ?? ""}
+            playerAvatar={playerAvatar ?? ""}
+            onOpenSoundboard={() => setSoundboardOpen(true)}
+            onOpenLeaderboard={() => setLeaderboardOpen(true)}
+            onOpenProfile={() => setProfileOpen(true)}
+          />
+          <GlobalLeaderboard
+            players={players}
+            open={leaderboardOpen}
+            onOpenChange={setLeaderboardOpen}
+          />
+          <GlobalSoundboard
+            myPlayerInRoom={myPlayerInRoom}
+            supabase={supabase}
+            broadcastSound={broadcastSound}
+            playSound={playSound}
+            refetchMyPlayer={refetchMyPlayer}
+            open={soundboardOpen}
+            onOpenChange={setSoundboardOpen}
+          />
+          <ProfileEditModal
+            open={profileOpen}
+            onOpenChange={setProfileOpen}
+            myPlayerInRoom={myPlayerInRoom}
+            playerName={playerName ?? ""}
+            playerAvatar={playerAvatar ?? ""}
+            setPlayerName={setPlayerName}
+            setPlayerAvatar={setPlayerAvatar}
+            supabase={supabase}
+            onSaved={refetchMyPlayer}
+          />
+        </>
+      )}
     </div>
   );
 }

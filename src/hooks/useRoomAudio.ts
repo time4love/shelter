@@ -4,12 +4,19 @@ import { useCallback, useEffect, useRef } from "react";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { useAudioUnlockStore } from "@/store/audio-unlock-store";
 
+/** Append cache-busting query so re-recorded clips at the same URL play the new content. */
+function withCacheBust(url: string): string {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}_=${Date.now()}`;
+}
+
 /**
  * Plays an audio URL. On NotAllowedError (autoplay blocked), sets global audioBlocked so the unlock banner is shown.
+ * Uses cache-busting so re-recorded clips (same URL, new content) play the latest version.
  */
 export function playAudioUrl(url: string): void {
   try {
-    const audio = new Audio(url);
+    const audio = new Audio(withCacheBust(url));
     const played = audio.play();
     if (typeof played?.catch === "function") {
       played.catch((err: unknown) => {
@@ -79,7 +86,7 @@ export function useRoomAudio(roomId: string | null) {
     channel.on("broadcast", { event: "play_sound" }, (payload) => {
       const url = (payload.payload as { url?: string })?.url;
       if (typeof url !== "string" || !url) return;
-      const audio = new Audio(url);
+      const audio = new Audio(withCacheBust(url));
       audio.play().catch((err: unknown) => {
         const isBlocked =
           err instanceof Error && (err.name === "NotAllowedError" || err.name === "NotAllowed");
