@@ -197,7 +197,8 @@ export function BattleshipBattlefield({
         await playersApi.update(supabase, myPlayerInRoom.id, { score: myPlayerInRoom.score + 10 });
       }
       await fetchShots();
-      // Keep shooting true until turn passes (useEffect clears when !isMyTurn)
+      // On hit: same player keeps turn — clear shooting so they can shoot again. On miss: keep shooting true until turn passes (useEffect clears when !isMyTurn).
+      if (isHit) setShooting(false);
     } catch {
       setShooting(false);
     }
