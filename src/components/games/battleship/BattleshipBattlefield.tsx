@@ -212,21 +212,8 @@ export function BattleshipBattlefield({
       <div
         className={`text-center text-lg font-bold ${isMyTurn ? "animate-pulse text-green-600" : "text-foreground"}`}
       >
-        תורו של {shooter ? (
-          <>
-            {shooter.name} <span aria-hidden>{shooter.avatar}</span>
-          </>
-        ) : (
-          "..."
-        )}
-        {" — "}
-        תוקף את הלוח של {target ? (
-          <>
-            {target.name} <span aria-hidden>{target.avatar}</span>
-          </>
-        ) : (
-          "..."
-        )}
+        <span aria-hidden>{shooter?.avatar ?? "…"}</span> תוקף את הלוח של{" "}
+        <span aria-hidden>{target?.avatar ?? "…"}</span>
       </div>
       <BattleshipBoard
         gridSize={BOARD_SIZE}
