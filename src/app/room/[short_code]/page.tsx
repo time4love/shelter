@@ -39,8 +39,8 @@ export default function RoomPage() {
     Boolean(playerAvatar);
   const inRoomView =
     inLobby ||
-    (room?.status === "game_selection" && myPlayerInRoom) ||
-    (room?.status === "playing" && myPlayerInRoom);
+    Boolean(room?.status === "game_selection" && myPlayerInRoom) ||
+    Boolean(room?.status === "playing" && myPlayerInRoom);
   const players = useLobbyPlayers(room?.id ?? null, inRoomView);
 
   const supabase = createBrowserClient();
