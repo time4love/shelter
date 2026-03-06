@@ -52,11 +52,11 @@ export function EretzIrGame({
 
   return (
     <div
-      className="flex flex-col w-full bg-gradient-to-b from-soft-pink/20 via-background to-sky-blue/20"
+      className="flex flex-col w-full flex-1 min-h-0 bg-gradient-to-b from-soft-pink/20 via-background to-sky-blue/20"
       dir="rtl"
       lang="he"
     >
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-1 min-h-0">
         <h1 className="mb-2 px-4 text-center text-2xl font-bold text-foreground">
           ארץ עיר 🏙️
         </h1>
@@ -83,15 +83,17 @@ export function EretzIrGame({
         )}
 
         {state.phase === "async_results" && (
-          <EretzIrAsyncResults
-            room={room}
-            players={players}
-            myPlayerInRoom={myPlayerInRoom}
-            isHost={isHost}
-            roundId={state.roundId}
-            readyPlayers={state.readyPlayers}
-            supabase={supabase}
-          />
+          <div className="flex flex-col flex-1 min-h-0 -mx-4 px-4">
+            <EretzIrAsyncResults
+              room={room}
+              players={players}
+              myPlayerInRoom={myPlayerInRoom}
+              isHost={isHost}
+              roundId={state.roundId}
+              readyPlayers={state.readyPlayers}
+              supabase={supabase}
+            />
+          </div>
         )}
       </div>
     </div>

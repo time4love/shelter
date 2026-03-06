@@ -66,9 +66,10 @@ export function EretzIrAsyncResults({
     })();
   }, [isHost, room.id, players.length, readyPlayers.length, supabase]);
 
-  const handleMarkDone = () => {
+  const handleMarkDone = async () => {
     setIsDone(true);
-    const current = (room.game_state as { readyPlayers?: string[] } | null)?.readyPlayers ?? [];
+    const { data } = await supabase.from("rooms").select("game_state").eq("id", room.id).single();
+    const current = (data?.game_state as { readyPlayers?: string[] } | null)?.readyPlayers ?? [];
     const next = Array.from(new Set([...current, myPlayerInRoom.id]));
     void roomsApi.updateGameState(supabase, room.id, {
       phase: "async_results",
@@ -107,30 +108,10 @@ export function EretzIrAsyncResults({
     );
   }
 
-  // View C: Waiting for others
-  if (isDone) {
-    const count = readyPlayers?.length ?? 0;
-    const total = players.length;
-    return (
-      <div
-        className="flex flex-col items-center justify-center min-h-[40vh] gap-4 px-6 py-8"
-        dir="rtl"
-        lang="he"
-      >
-        <p className="text-center text-xl font-medium text-foreground">
-          ממתין לשאר השחקנים שיסיימו לקרוא... ⏳
-        </p>
-        <p className="text-center text-2xl font-bold text-foreground">
-          ({count}/{total})
-        </p>
-      </div>
-    );
-  }
-
-  // View B: Scrollable results
+  // View B: Scrollable results; green button sticky at bottom (when not done). No "waiting" screen.
   return (
-    <div className="flex flex-col w-full h-full" dir="rtl" lang="he">
-      <div className="flex-1 overflow-y-auto w-full pb-24">
+    <div className="flex flex-col w-full min-h-0 flex-1" dir="rtl" lang="he">
+      <div className="flex-1 min-h-0 overflow-y-auto w-full pb-4">
         {CATEGORIES.map((category, index) => {
           const catScores = computeScoreForCategory(category, answers);
           const bgColor = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
@@ -177,15 +158,17 @@ export function EretzIrAsyncResults({
           );
         })}
       </div>
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white border-t shadow-md rounded-t-2xl">
-        <button
-          type="button"
-          onClick={handleMarkDone}
-          className="w-full rounded-2xl bg-mint-green py-4 font-bold text-xl text-white shadow-card active:scale-[0.98]"
-        >
-          סיימתי, אני מוכן למשחק הבא ➡️
-        </button>
-      </div>
+      {!isDone && (
+        <div className="sticky bottom-0 z-10 shrink-0 p-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white border-t shadow-md rounded-t-2xl">
+          <button
+            type="button"
+            onClick={handleMarkDone}
+            className="w-full rounded-2xl bg-mint-green py-4 font-bold text-xl text-white shadow-card active:scale-[0.98]"
+          >
+            סיימתי, אני מוכן למשחק הבא ➡️
+          </button>
+        </div>
+      )}
     </div>
   );
 }
