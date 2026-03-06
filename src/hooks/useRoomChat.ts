@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createBrowserClient } from "@/lib/supabase/client";
-import type { ChatMessageRow, PlayerRow } from "@/types/database";
+import type { ChatMessageRow, Database, PlayerRow } from "@/types/database";
 
 export interface FloatingBubbleItem {
   id: string;
@@ -126,11 +126,12 @@ export function useRoomChat(
     async (text: string): Promise<{ error: string | null }> => {
       if (!roomId || !myPlayerId || !text.trim()) return { error: null };
       const supabase = createBrowserClient();
-      const { error: insertErr } = await supabase.from("chat_messages").insert({
+      const insertRow: Database["public"]["Tables"]["chat_messages"]["Insert"] = {
         room_id: roomId,
         player_id: myPlayerId,
         message: text.trim(),
-      });
+      };
+      const { error: insertErr } = await supabase.from("chat_messages").insert(insertRow);
       if (insertErr) {
         setError("אופס, משהו השתבש. נסה שוב!");
         return { error: "אופס, משהו השתבש. נסה שוב!" };
