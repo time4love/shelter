@@ -14,6 +14,7 @@ export interface EretzIrWritingPhaseProps {
   myPlayerInRoom: PlayerRow;
   isHost: boolean;
   letter: string;
+  roundId?: string;
   supabase: SupabaseClient<Database>;
 }
 
@@ -26,6 +27,7 @@ export function EretzIrWritingPhase({
   myPlayerInRoom,
   isHost,
   letter,
+  roundId,
   supabase,
 }: EretzIrWritingPhaseProps) {
   const [answers, setAnswers] = useState<EretzIrAnswersMap>(() => ({ ...INITIAL_ANSWERS }));
@@ -42,11 +44,13 @@ export function EretzIrWritingPhase({
   }, []);
 
   const handleSubmit = async () => {
+    if (!roundId) return;
     setSubmitError(null);
     try {
       const { error } = await eretzIrAnswersApi.upsert(supabase, {
         room_id: room.id,
         player_id: myPlayerInRoom.id,
+        round_id: roundId,
         answers,
       });
       if (error) throw error;
@@ -60,6 +64,7 @@ export function EretzIrWritingPhase({
     await roomsApi.updateGameState(supabase, room.id, {
       phase: "revealing",
       currentCategoryIndex: 0,
+      roundId,
     });
   }
 

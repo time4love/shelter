@@ -119,12 +119,12 @@ export const eretzIrAnswers = {
   upsert: (
     client: SupabaseClient<Database>,
     row: EretzIrAnswerUpsert,
-    options: { onConflict: string } = { onConflict: "room_id,player_id" }
+    options: { onConflict: string } = { onConflict: "room_id,round_id,player_id" }
   ) =>
     client.from("eretz_ir_answers").upsert(row as never, options as never),
 
-  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
-    client.from("eretz_ir_answers").select("*").eq("room_id", roomId),
+  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string, roundId: string) =>
+    client.from("eretz_ir_answers").select("*").eq("room_id", roomId).eq("round_id", roundId),
 };
 
 type BattleshipBoardInsert = Database["public"]["Tables"]["battleship_boards"]["Insert"];
@@ -134,32 +134,32 @@ type MastermindGuessInsert = Database["public"]["Tables"]["mastermind_guesses"][
 
 export const battleshipBoards = {
   upsert: (client: SupabaseClient<Database>, row: BattleshipBoardInsert) =>
-    client.from("battleship_boards").upsert(row as never, { onConflict: "room_id,player_id" }),
-  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
-    client.from("battleship_boards").select("*").eq("room_id", roomId),
-  fetchByRoomAndPlayer: (client: SupabaseClient<Database>, roomId: string, playerId: string) =>
-    client.from("battleship_boards").select("*").eq("room_id", roomId).eq("player_id", playerId).maybeSingle(),
+    client.from("battleship_boards").upsert(row as never, { onConflict: "room_id,round_id,player_id" }),
+  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string, roundId: string) =>
+    client.from("battleship_boards").select("*").eq("room_id", roomId).eq("round_id", roundId),
+  fetchByRoomAndPlayer: (client: SupabaseClient<Database>, roomId: string, playerId: string, roundId: string) =>
+    client.from("battleship_boards").select("*").eq("room_id", roomId).eq("player_id", playerId).eq("round_id", roundId).maybeSingle(),
 };
 
 export const battleshipShots = {
   insert: (client: SupabaseClient<Database>, row: BattleshipShotInsert) =>
     client.from("battleship_shots").insert(row as never),
-  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
-    client.from("battleship_shots").select("*").eq("room_id", roomId),
-  fetchByRoomAndTarget: (client: SupabaseClient<Database>, roomId: string, targetId: string) =>
-    client.from("battleship_shots").select("*").eq("room_id", roomId).eq("target_id", targetId),
+  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string, roundId: string) =>
+    client.from("battleship_shots").select("*").eq("room_id", roomId).eq("round_id", roundId),
+  fetchByRoomAndTarget: (client: SupabaseClient<Database>, roomId: string, targetId: string, roundId: string) =>
+    client.from("battleship_shots").select("*").eq("room_id", roomId).eq("target_id", targetId).eq("round_id", roundId),
 };
 
 export const mastermindCodes = {
   insert: (client: SupabaseClient<Database>, row: MastermindCodeInsert) =>
     client.from("mastermind_codes").insert(row as never),
-  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
-    client.from("mastermind_codes").select("*").eq("room_id", roomId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string, roundId: string) =>
+    client.from("mastermind_codes").select("*").eq("room_id", roomId).eq("round_id", roundId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
 };
 
 export const mastermindGuesses = {
   insert: (client: SupabaseClient<Database>, row: MastermindGuessInsert) =>
     client.from("mastermind_guesses").insert(row as never),
-  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
-    client.from("mastermind_guesses").select("*").eq("room_id", roomId).order("created_at", { ascending: true }),
+  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string, roundId: string) =>
+    client.from("mastermind_guesses").select("*").eq("room_id", roomId).eq("round_id", roundId).order("created_at", { ascending: true }),
 };

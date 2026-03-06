@@ -13,6 +13,7 @@ export interface EretzIrRevealingPhaseProps {
   players: PlayerRow[];
   isHost: boolean;
   currentCategoryIndex: number;
+  roundId?: string;
   supabase: SupabaseClient<Database>;
 }
 
@@ -44,6 +45,7 @@ export function EretzIrRevealingPhase({
   players,
   isHost,
   currentCategoryIndex,
+  roundId,
   supabase,
 }: EretzIrRevealingPhaseProps) {
   const [answers, setAnswers] = useState<EretzIrAnswerRow[]>([]);
@@ -52,9 +54,10 @@ export function EretzIrRevealingPhase({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!roundId) return;
     let cancelled = false;
     (async () => {
-      const { data, error: err } = await eretzIrAnswersApi.fetchByRoomId(supabase, room.id);
+      const { data, error: err } = await eretzIrAnswersApi.fetchByRoomId(supabase, room.id, roundId);
       if (cancelled) return;
       if (err) {
         setError("אופס, משהו השתבש.");
@@ -65,7 +68,7 @@ export function EretzIrRevealingPhase({
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [supabase, room.id]);
+  }, [supabase, room.id, roundId]);
 
   const category = CATEGORIES[currentCategoryIndex];
   const isLastCategory = currentCategoryIndex === CATEGORIES.length - 1;
@@ -82,6 +85,7 @@ export function EretzIrRevealingPhase({
     await roomsApi.updateGameState(supabase, room.id, {
       phase: "revealing",
       currentCategoryIndex: currentCategoryIndex + 1,
+      roundId,
     });
   };
 
@@ -103,7 +107,7 @@ export function EretzIrRevealingPhase({
         const { error: err } = await playersApi.update(supabase, p.id, { score: newScore });
         if (err) throw err;
       }
-      await roomsApi.updateGameState(supabase, room.id, { phase: "round_results" });
+      await roomsApi.updateGameState(supabase, room.id, { phase: "round_results", roundId });
     } catch {
       setError("אופס, משהו השתבש. נסה שוב!");
     } finally {

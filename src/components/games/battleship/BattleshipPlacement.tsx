@@ -15,6 +15,7 @@ export interface BattleshipPlacementProps {
   players: PlayerRow[];
   myPlayerInRoom: PlayerRow;
   isHost: boolean;
+  roundId: string;
   supabase: SupabaseClient<Database>;
 }
 
@@ -23,6 +24,7 @@ export function BattleshipPlacement({
   players,
   myPlayerInRoom,
   isHost,
+  roundId,
   supabase,
 }: BattleshipPlacementProps) {
   const [ships, setShips] = useState<BattleshipShip[]>([]);
@@ -34,23 +36,26 @@ export function BattleshipPlacement({
 
   useEffect(() => {
     const fetchBoards = async () => {
-      const { data } = await battleshipBoards.fetchByRoomId(supabase, room.id);
+      const { data } = await battleshipBoards.fetchByRoomId(supabase, room.id, roundId);
       const list = (data ?? []) as { player_id: string }[];
       setBoardsCount(list.length);
     };
     fetchBoards();
     const channel = supabase
-      .channel(`battleship_boards_${room.id}`)
+      .channel(`battleship_boards_${room.id}_${roundId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "battleship_boards", filter: `room_id=eq.${room.id}` },
-        () => fetchBoards()
+        { event: "*", schema: "public", table: "battleship_boards", filter: `round_id=eq.${roundId}` },
+        (payload) => {
+          const row = payload.new as { room_id?: string; round_id?: string };
+          if (row?.room_id === room.id && row?.round_id === roundId) fetchBoards();
+        }
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [room.id, supabase]);
+  }, [room.id, roundId, supabase]);
 
   const allReady = boardsCount >= players.length;
   const canSubmit = ships.length === 5;
@@ -101,6 +106,7 @@ export function BattleshipPlacement({
       const { error } = await battleshipBoards.upsert(supabase, {
         room_id: room.id,
         player_id: myPlayerInRoom.id,
+        round_id: roundId,
         ships,
       });
       if (error) throw error;
@@ -125,6 +131,7 @@ export function BattleshipPlacement({
         targetQueue: opps,
         currentTargetId: opps[0] ?? firstId,
         alivePlayers,
+        roundId,
       });
     } catch {
       // Error handling

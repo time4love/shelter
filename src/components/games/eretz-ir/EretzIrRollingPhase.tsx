@@ -7,12 +7,14 @@ import { LETTERS } from "./constants";
 
 export interface EretzIrRollingPhaseProps {
   roomId: string;
+  roundId?: string;
   isHost: boolean;
   supabase: SupabaseClient<Database>;
 }
 
 export function EretzIrRollingPhase({
   roomId,
+  roundId,
   isHost,
   supabase,
 }: EretzIrRollingPhaseProps) {
@@ -21,6 +23,7 @@ export function EretzIrRollingPhase({
     await roomsApi.updateGameState(supabase, roomId, {
       phase: "writing",
       letter,
+      roundId,
     });
   }
 

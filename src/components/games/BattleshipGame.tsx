@@ -22,8 +22,9 @@ function parseGameState(room: RoomRow): GameStateBattleship | null {
   const g = room.game_state;
   if (g == null || typeof g !== "object") return null;
   const o = g as Record<string, unknown>;
+  const roundId = typeof o.roundId === "string" ? o.roundId : undefined;
   if (o.phase === "hiding") {
-    return { phase: "hiding" };
+    return { phase: "hiding", roundId };
   }
   if (
     o.phase === "playing" &&
@@ -38,12 +39,14 @@ function parseGameState(room: RoomRow): GameStateBattleship | null {
       targetQueue: o.targetQueue as string[],
       currentTargetId: o.currentTargetId,
       alivePlayers: o.alivePlayers as string[],
+      roundId,
     };
   }
   if (o.phase === "round_results") {
     return {
       phase: "round_results",
       winnerId: typeof o.winnerId === "string" ? o.winnerId : undefined,
+      roundId,
     };
   }
   return null;
@@ -60,8 +63,9 @@ export function BattleshipGame({
 
   useEffect(() => {
     if (!isHost || gameState !== null) return;
-    roomsApi.updateGameState(supabase, room.id, { phase: "hiding" });
-  }, [isHost, room.id, supabase, gameState]);
+    const roundId = (room.game_state as Record<string, unknown>)?.roundId as string | undefined;
+    roomsApi.updateGameState(supabase, room.id, { phase: "hiding", roundId });
+  }, [isHost, room.id, room.game_state, supabase, gameState]);
 
   const state = gameState ?? { phase: "hiding" as const };
 
@@ -75,23 +79,25 @@ export function BattleshipGame({
         צוללות 🚢
       </h1>
 
-      {state.phase === "hiding" && (
+      {state.phase === "hiding" && state.roundId && (
         <BattleshipPlacement
           room={room}
           players={players}
           myPlayerInRoom={myPlayerInRoom}
           isHost={isHost}
+          roundId={state.roundId}
           supabase={supabase}
         />
       )}
 
-      {state.phase === "playing" && (
+      {state.phase === "playing" && state.roundId && (
         <BattleshipBattlefield
           room={room}
           players={players}
           myPlayerInRoom={myPlayerInRoom}
           isHost={isHost}
           gameState={state}
+          roundId={state.roundId}
           supabase={supabase}
         />
       )}

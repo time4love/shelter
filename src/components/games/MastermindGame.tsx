@@ -26,8 +26,9 @@ function parseGameState(room: RoomRow): GameStateMastermind | null {
   const g = room.game_state;
   if (g == null || typeof g !== "object") return null;
   const o = g as Record<string, unknown>;
+  const roundId = typeof o.roundId === "string" ? o.roundId : undefined;
   if (o.phase === "setting" && typeof o.setterId === "string") {
-    return { phase: "setting", setterId: o.setterId };
+    return { phase: "setting", setterId: o.setterId, roundId };
   }
   if (
     o.phase === "playing" &&
@@ -40,6 +41,7 @@ function parseGameState(room: RoomRow): GameStateMastermind | null {
       setterId: o.setterId,
       currentTurnId: o.currentTurnId,
       guessersQueue: o.guessersQueue as string[],
+      roundId,
     };
   }
   if (o.phase === "round_results" && typeof o.setterId === "string") {
@@ -47,6 +49,7 @@ function parseGameState(room: RoomRow): GameStateMastermind | null {
       phase: "round_results",
       setterId: o.setterId,
       winnerId: typeof o.winnerId === "string" ? o.winnerId : o.winnerId === null ? null : undefined,
+      roundId,
     };
   }
   return null;
@@ -100,10 +103,11 @@ export function MastermindGame({
 
   useEffect(() => {
     if (room.current_game !== "mastermind" || !isHost || rawState !== null || players.length === 0) return;
+    const roundId = (room.game_state as Record<string, unknown>)?.roundId as string | undefined;
     const randomIndex = Math.floor(Math.random() * players.length);
     const setterId = players[randomIndex]?.id ?? players[0]!.id;
-    roomsApi.updateGameState(supabase, room.id, { phase: "setting", setterId });
-  }, [room.current_game, room.id, isHost, players, rawState, supabase]);
+    roomsApi.updateGameState(supabase, room.id, { phase: "setting", setterId, roundId });
+  }, [room.current_game, room.id, room.game_state, isHost, players, rawState, supabase]);
 
   const gameState = rawState ?? { phase: "setting" as const, setterId: players[0]?.id ?? "" };
 
@@ -117,24 +121,26 @@ export function MastermindGame({
         בול פגיעה 🎯
       </h1>
 
-      {gameState.phase === "setting" && (
+      {gameState.phase === "setting" && gameState.roundId && (
         <MastermindSettingPhase
           room={room}
           players={players}
           myPlayerInRoom={myPlayerInRoom}
           isHost={isHost}
           setterId={gameState.setterId}
+          roundId={gameState.roundId}
           supabase={supabase}
         />
       )}
 
-      {gameState.phase === "playing" && (
+      {gameState.phase === "playing" && gameState.roundId && (
         <MastermindPlayingPhase
           room={room}
           players={players}
           myPlayerInRoom={myPlayerInRoom}
           isHost={isHost}
           gameState={gameState}
+          roundId={gameState.roundId}
           supabase={supabase}
         />
       )}
@@ -147,6 +153,7 @@ export function MastermindGame({
           isHost={isHost}
           setterId={gameState.setterId}
           winnerId={gameState.winnerId ?? null}
+          roundId={gameState.roundId}
           supabase={supabase}
         />
       )}
@@ -161,6 +168,7 @@ interface MastermindSettingPhaseProps {
   myPlayerInRoom: PlayerRow;
   isHost: boolean;
   setterId: string;
+  roundId: string;
   supabase: SupabaseClient<Database>;
 }
 
@@ -169,6 +177,7 @@ function MastermindSettingPhase({
   players,
   myPlayerInRoom,
   setterId,
+  roundId,
   supabase,
 }: MastermindSettingPhaseProps) {
   const [code, setCode] = useState<MastermindColorName[]>([]);
@@ -195,6 +204,7 @@ function MastermindSettingPhase({
       const { error: insertErr } = await mastermindCodes.insert(supabase, {
         room_id: room.id,
         setter_id: setterId,
+        round_id: roundId,
         code: [...code],
       });
       if (insertErr) throw insertErr;
@@ -203,6 +213,7 @@ function MastermindSettingPhase({
         setterId,
         currentTurnId: guessersQueue[0] ?? setterId,
         guessersQueue,
+        roundId,
       });
     } catch {
       setError("אופס, משהו השתבש. נסה שוב!");
@@ -280,6 +291,7 @@ interface MastermindPlayingPhaseProps {
   myPlayerInRoom: PlayerRow;
   isHost: boolean;
   gameState: Extract<GameStateMastermind, { phase: "playing" }>;
+  roundId: string;
   supabase: SupabaseClient<Database>;
 }
 
@@ -289,6 +301,7 @@ function MastermindPlayingPhase({
   myPlayerInRoom,
   isHost,
   gameState,
+  roundId,
   supabase,
 }: MastermindPlayingPhaseProps) {
   const [guesses, setGuesses] = useState<MastermindGuessRow[]>([]);
@@ -299,24 +312,27 @@ function MastermindPlayingPhase({
   const isMyTurn = currentTurnId === myPlayerInRoom.id && myPlayerInRoom.id !== setterId;
 
   const fetchGuesses = useCallback(async () => {
-    const { data } = await mastermindGuesses.fetchByRoomId(supabase, room.id);
+    const { data } = await mastermindGuesses.fetchByRoomId(supabase, room.id, roundId);
     setGuesses((data ?? []) as MastermindGuessRow[]);
-  }, [room.id, supabase]);
+  }, [room.id, roundId, supabase]);
 
   useEffect(() => {
     fetchGuesses();
     const ch = supabase
-      .channel(`mastermind_guesses_${room.id}`)
+      .channel(`mastermind_guesses_${room.id}_${roundId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "mastermind_guesses", filter: `room_id=eq.${room.id}` },
-        fetchGuesses
+        { event: "*", schema: "public", table: "mastermind_guesses", filter: `round_id=eq.${roundId}` },
+        (payload) => {
+          const row = payload.new as { room_id?: string; round_id?: string };
+          if (row?.room_id === room.id && row?.round_id === roundId) fetchGuesses();
+        }
       )
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [room.id, supabase, fetchGuesses]);
+  }, [room.id, roundId, supabase, fetchGuesses]);
 
   const lastProcessedCountRef = useRef<number>(-1);
   const initialSyncRef = useRef(false);
@@ -330,10 +346,10 @@ function MastermindPlayingPhase({
     if (guesses.length <= lastProcessedCountRef.current) return;
     lastProcessedCountRef.current = guesses.length;
     const runHostLogic = async () => {
-      const { data: codeRow } = await mastermindCodes.fetchByRoomId(supabase, room.id);
+      const { data: codeRow } = await mastermindCodes.fetchByRoomId(supabase, room.id, roundId);
       const secretCode = (codeRow as { code?: string[] } | null)?.code;
       if (!secretCode || secretCode.length !== 4) return;
-      const { data: list } = await mastermindGuesses.fetchByRoomId(supabase, room.id);
+      const { data: list } = await mastermindGuesses.fetchByRoomId(supabase, room.id, roundId);
       const allGuesses = (list ?? []) as MastermindGuessRow[];
       const lastGuess = allGuesses[allGuesses.length - 1];
       if (!lastGuess) return;
@@ -346,6 +362,7 @@ function MastermindPlayingPhase({
           phase: "round_results",
           setterId,
           winnerId: lastGuess.guesser_id,
+          roundId,
         });
       } else {
         const idx = guessersQueue.indexOf(lastGuess.guesser_id);
@@ -356,11 +373,12 @@ function MastermindPlayingPhase({
           setterId,
           currentTurnId: nextId,
           guessersQueue,
+          roundId,
         });
       }
     };
     runHostLogic();
-  }, [isHost, guesses.length, room.id, supabase, setterId, guessersQueue, players]);
+  }, [isHost, guesses.length, room.id, roundId, supabase, setterId, guessersQueue, players]);
 
   return (
     <div className="flex flex-1 flex-col gap-4 px-4" dir="rtl" lang="he">
@@ -409,7 +427,7 @@ function MastermindPlayingPhase({
             setError(null);
             setSubmitting(true);
             try {
-              const { data: codeRow } = await mastermindCodes.fetchByRoomId(supabase, room.id);
+              const { data: codeRow } = await mastermindCodes.fetchByRoomId(supabase, room.id, roundId);
               const secret = (codeRow as { code?: string[] } | null)?.code;
               if (!secret || secret.length !== 4) {
                 setError("הקוד עדיין לא הוגדר. נסה שוב.");
@@ -419,6 +437,7 @@ function MastermindPlayingPhase({
               const { error: insertErr } = await mastermindGuesses.insert(supabase, {
                 room_id: room.id,
                 guesser_id: myPlayerInRoom.id,
+                round_id: roundId,
                 guess: [...guess],
                 bulls,
                 hits,
@@ -517,6 +536,7 @@ interface MastermindRoundResultsProps {
   isHost: boolean;
   setterId: string;
   winnerId: string | null;
+  roundId?: string;
   supabase: SupabaseClient<Database>;
 }
 
@@ -526,6 +546,7 @@ function MastermindRoundResults({
   isHost,
   setterId,
   winnerId,
+  roundId,
   supabase,
 }: MastermindRoundResultsProps) {
   const [secretCode, setSecretCode] = useState<string[] | null>(null);
@@ -534,13 +555,14 @@ function MastermindRoundResults({
   const winner = winnerId ? players.find((p) => p.id === winnerId) : null;
 
   useEffect(() => {
+    if (!roundId) return;
     let cancelled = false;
     (async () => {
-      const { data } = await mastermindCodes.fetchByRoomId(supabase, room.id);
+      const { data } = await mastermindCodes.fetchByRoomId(supabase, room.id, roundId);
       if (!cancelled && data) setSecretCode((data as { code: string[] }).code);
     })();
     return () => { cancelled = true; };
-  }, [room.id, supabase]);
+  }, [room.id, roundId, supabase]);
 
   const handleBackToSelection = async () => {
     if (!isHost) return;

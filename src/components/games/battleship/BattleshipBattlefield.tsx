@@ -16,6 +16,7 @@ export interface BattleshipBattlefieldProps {
   myPlayerInRoom: PlayerRow;
   isHost: boolean;
   gameState: Extract<GameStateBattleship, { phase: "playing" }>;
+  roundId: string;
   supabase: SupabaseClient<Database>;
 }
 
@@ -25,6 +26,7 @@ export function BattleshipBattlefield({
   myPlayerInRoom,
   isHost,
   gameState,
+  roundId,
   supabase,
 }: BattleshipBattlefieldProps) {
   const [boards, setBoards] = useState<BattleshipBoardRow[]>([]);
@@ -34,39 +36,45 @@ export function BattleshipBattlefield({
   const isMyTurn = currentTurnId === myPlayerInRoom.id;
 
   const fetchBoards = useCallback(async () => {
-    const { data } = await battleshipBoards.fetchByRoomId(supabase, room.id);
+    const { data } = await battleshipBoards.fetchByRoomId(supabase, room.id, roundId);
     setBoards((data ?? []) as BattleshipBoardRow[]);
-  }, [room.id, supabase]);
+  }, [room.id, roundId, supabase]);
 
   const fetchShots = useCallback(async () => {
-    const { data } = await battleshipShots.fetchByRoomId(supabase, room.id);
+    const { data } = await battleshipShots.fetchByRoomId(supabase, room.id, roundId);
     setShots((data ?? []) as BattleshipShotRow[]);
-  }, [room.id, supabase]);
+  }, [room.id, roundId, supabase]);
 
   useEffect(() => {
     fetchBoards();
     fetchShots();
     const chBoards = supabase
-      .channel(`battleship_boards_${room.id}`)
+      .channel(`battleship_boards_${room.id}_${roundId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "battleship_boards", filter: `room_id=eq.${room.id}` },
-        fetchBoards
+        { event: "*", schema: "public", table: "battleship_boards", filter: `round_id=eq.${roundId}` },
+        (payload) => {
+          const row = payload.new as { room_id?: string; round_id?: string };
+          if (row?.room_id === room.id && row?.round_id === roundId) fetchBoards();
+        }
       )
       .subscribe();
     const chShots = supabase
-      .channel(`battleship_shots_${room.id}`)
+      .channel(`battleship_shots_${room.id}_${roundId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "battleship_shots", filter: `room_id=eq.${room.id}` },
-        fetchShots
+        { event: "*", schema: "public", table: "battleship_shots", filter: `round_id=eq.${roundId}` },
+        (payload) => {
+          const row = payload.new as { room_id?: string; round_id?: string };
+          if (row?.room_id === room.id && row?.round_id === roundId) fetchShots();
+        }
       )
       .subscribe();
     return () => {
       supabase.removeChannel(chBoards);
       supabase.removeChannel(chShots);
     };
-  }, [room.id, supabase, fetchBoards, fetchShots]);
+  }, [room.id, roundId, supabase, fetchBoards, fetchShots]);
 
   const targetBoard = boards.find((b) => b.player_id === currentTargetId);
   const shotsOnTarget = shots.filter((s) => s.target_id === currentTargetId);
@@ -102,7 +110,7 @@ export function BattleshipBattlefield({
     if (shots.length <= lastProcessedCountRef.current) return;
     lastProcessedCountRef.current = shots.length;
     const runTurnLogic = async () => {
-      const { data: shotsList } = await battleshipShots.fetchByRoomId(supabase, room.id);
+      const { data: shotsList } = await battleshipShots.fetchByRoomId(supabase, room.id, roundId);
       const allShots: BattleshipShotRow[] = (shotsList ?? []) as BattleshipShotRow[];
       const lastShot = allShots[allShots.length - 1];
       if (!lastShot) return;
@@ -118,7 +126,7 @@ export function BattleshipBattlefield({
           const winner = players.find((p) => p.id === winnerId);
           if (winner) await playersApi.update(supabase, winnerId, { score: winner.score + 20 });
         }
-        await roomsApi.updateGameState(supabase, room.id, { phase: "round_results", winnerId });
+        await roomsApi.updateGameState(supabase, room.id, { phase: "round_results", winnerId, roundId });
         return;
       }
 
@@ -134,6 +142,7 @@ export function BattleshipBattlefield({
             targetQueue: targetQueue.filter((id) => stillAlive.includes(id)),
             currentTargetId: newTargetId,
             alivePlayers: stillAlive,
+            roundId,
           });
         }
         return;
@@ -160,10 +169,11 @@ export function BattleshipBattlefield({
         targetQueue: newQueue,
         currentTargetId: newTargetId,
         alivePlayers: stillAlive,
+        roundId,
       });
     };
     runTurnLogic();
-  }, [isHost, shots.length, room.id, supabase, currentTurnId, targetQueue, currentTargetId, alivePlayers, players]);
+  }, [isHost, shots.length, room.id, roundId, supabase, currentTurnId, targetQueue, currentTargetId, alivePlayers, players]);
 
   async function handleCellClick(cellIndex: number) {
     if (!isMyTurn || shooting || shotCellsTarget.has(cellIndex)) return;
@@ -181,6 +191,7 @@ export function BattleshipBattlefield({
         room_id: room.id,
         shooter_id: myPlayerInRoom.id,
         target_id: currentTargetId,
+        round_id: roundId,
         cell_index: cellIndex,
         is_hit: isHit,
       });

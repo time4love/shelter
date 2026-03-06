@@ -23,14 +23,15 @@ function parseGameState(room: RoomRow): GameStateEretzIr | null {
   const g = room.game_state;
   if (g == null || typeof g !== "object") return null;
   const o = g as Record<string, unknown>;
-  if (o.phase === "rolling") return { phase: "rolling" };
+  const roundId = typeof o.roundId === "string" ? o.roundId : undefined;
+  if (o.phase === "rolling") return { phase: "rolling", roundId };
   if (o.phase === "writing" && typeof o.letter === "string") {
-    return { phase: "writing", letter: o.letter };
+    return { phase: "writing", letter: o.letter, roundId };
   }
   if (o.phase === "revealing" && typeof o.currentCategoryIndex === "number") {
-    return { phase: "revealing", currentCategoryIndex: o.currentCategoryIndex };
+    return { phase: "revealing", currentCategoryIndex: o.currentCategoryIndex, roundId };
   }
-  if (o.phase === "round_results") return { phase: "round_results" };
+  if (o.phase === "round_results") return { phase: "round_results", roundId };
   return null;
 }
 
@@ -45,8 +46,9 @@ export function EretzIrGame({
 
   useEffect(() => {
     if (!isHost || gameState !== null) return;
-    roomsApi.updateGameState(supabase, room.id, { phase: "rolling" });
-  }, [isHost, room.id, supabase, gameState]);
+    const roundId = (room.game_state as Record<string, unknown>)?.roundId as string | undefined;
+    roomsApi.updateGameState(supabase, room.id, { phase: "rolling", roundId });
+  }, [isHost, room.id, room.game_state, supabase, gameState]);
 
   const state = gameState ?? { phase: "rolling" as const };
 
@@ -64,6 +66,7 @@ export function EretzIrGame({
         {state.phase === "rolling" && (
           <EretzIrRollingPhase
             roomId={room.id}
+            roundId={state.roundId}
             isHost={isHost}
             supabase={supabase}
           />
@@ -76,6 +79,7 @@ export function EretzIrGame({
             myPlayerInRoom={myPlayerInRoom}
             isHost={isHost}
             letter={state.letter}
+            roundId={state.roundId}
             supabase={supabase}
           />
         )}
@@ -86,6 +90,7 @@ export function EretzIrGame({
             players={players}
             isHost={isHost}
             currentCategoryIndex={state.currentCategoryIndex}
+            roundId={state.roundId}
             supabase={supabase}
           />
         )}

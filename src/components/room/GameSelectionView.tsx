@@ -85,23 +85,24 @@ export function GameSelectionView({
     setStartError(null);
     setStarting(true);
     try {
+      const newRoundId = crypto.randomUUID();
       const winningGame = getWinningGameId();
       let gameState:
-        | { phase: "writing" }
-        | { phase: "rolling" }
-        | { phase: "hiding"; gridSize: number }
-        | { phase: "setting"; setterId: string }
+        | { phase: "writing"; roundId: string }
+        | { phase: "rolling"; roundId: string }
+        | { phase: "hiding"; gridSize: number; roundId: string }
+        | { phase: "setting"; setterId: string; roundId: string }
         | undefined;
       if (winningGame === "truth_or_lie") {
-        gameState = { phase: "writing" };
+        gameState = { phase: "writing", roundId: newRoundId };
       } else if (winningGame === "eretz_ir") {
-        gameState = { phase: "rolling" };
+        gameState = { phase: "rolling", roundId: newRoundId };
       } else if (winningGame === "battleship") {
-        gameState = { phase: "hiding", gridSize: battleshipGridSize(players.length) };
+        gameState = { phase: "hiding", gridSize: battleshipGridSize(players.length), roundId: newRoundId };
       } else if (winningGame === "mastermind") {
         const randomIndex = Math.floor(Math.random() * players.length);
         const setterId = players[randomIndex]?.id ?? players[0]!.id;
-        gameState = { phase: "setting", setterId };
+        gameState = { phase: "setting", setterId, roundId: newRoundId };
       }
       const { error } = await roomsApi.updateStatusAndGame(
         supabase,

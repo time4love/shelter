@@ -34,10 +34,10 @@ export type GameStateTOL =
 
 /** Room.game_state for Eretz Ir (ארץ עיר) */
 export type GameStateEretzIr =
-  | { phase: "rolling" }
-  | { phase: "writing"; letter: string }
-  | { phase: "revealing"; currentCategoryIndex: number }
-  | { phase: "round_results" };
+  | { phase: "rolling"; roundId?: string }
+  | { phase: "writing"; letter: string; roundId?: string }
+  | { phase: "revealing"; currentCategoryIndex: number; roundId?: string }
+  | { phase: "round_results"; roundId?: string };
 
 /** Eretz Ir: answers object - keys are category names, values are typed words */
 export type EretzIrAnswersMap = Record<string, string>;
@@ -47,29 +47,31 @@ export type BattleshipShip = { id: string; size: number; cells: number[] };
 
 /** Room.game_state for Battleship (צוללות) */
 export type GameStateBattleship =
-  | { phase: "hiding" }
+  | { phase: "hiding"; roundId?: string }
   | {
       phase: "playing";
       currentTurnId: string;
       targetQueue: string[];
       currentTargetId: string;
       alivePlayers: string[];
+      roundId?: string;
     }
-  | { phase: "round_results"; winnerId?: string | null };
+  | { phase: "round_results"; winnerId?: string | null; roundId?: string };
 
 /** Mastermind (בול פגיעה): code color names stored as strings in JSONB */
 export type MastermindColorName = "red" | "blue" | "green" | "yellow" | "orange" | "purple";
 
 /** Room.game_state for Mastermind */
 export type GameStateMastermind =
-  | { phase: "setting"; setterId: string }
+  | { phase: "setting"; setterId: string; roundId?: string }
   | {
       phase: "playing";
       setterId: string;
       currentTurnId: string;
       guessersQueue: string[];
+      roundId?: string;
     }
-  | { phase: "round_results"; setterId: string; winnerId?: string | null };
+  | { phase: "round_results"; setterId: string; winnerId?: string | null; roundId?: string };
 
 export interface Database {
   public: {
@@ -141,6 +143,7 @@ export interface Database {
           room_id: string;
           player_id: string;
           game_id: GameId;
+          round_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -148,6 +151,7 @@ export interface Database {
           room_id: string;
           player_id: string;
           game_id: GameId;
+          round_id?: string | null;
           created_at?: string;
         };
         Update: {
@@ -155,6 +159,7 @@ export interface Database {
           room_id?: string;
           player_id?: string;
           game_id?: GameId;
+          round_id?: string | null;
           created_at?: string;
         };
       };
@@ -212,6 +217,7 @@ export interface Database {
           id: string;
           room_id: string;
           player_id: string;
+          round_id: string | null;
           answers: EretzIrAnswersMap;
           created_at: string;
         };
@@ -219,6 +225,7 @@ export interface Database {
           id?: string;
           room_id: string;
           player_id: string;
+          round_id?: string | null;
           answers?: EretzIrAnswersMap;
           created_at?: string;
         };
@@ -226,6 +233,7 @@ export interface Database {
           id?: string;
           room_id?: string;
           player_id?: string;
+          round_id?: string | null;
           answers?: EretzIrAnswersMap;
           created_at?: string;
         };
@@ -235,6 +243,7 @@ export interface Database {
           id: string;
           room_id: string;
           player_id: string;
+          round_id: string | null;
           ships: BattleshipShip[];
           created_at: string;
         };
@@ -242,6 +251,7 @@ export interface Database {
           id?: string;
           room_id: string;
           player_id: string;
+          round_id?: string | null;
           ships?: BattleshipShip[];
           created_at?: string;
         };
@@ -249,6 +259,7 @@ export interface Database {
           id?: string;
           room_id?: string;
           player_id?: string;
+          round_id?: string | null;
           ships?: BattleshipShip[];
           created_at?: string;
         };
@@ -259,6 +270,7 @@ export interface Database {
           room_id: string;
           shooter_id: string;
           target_id: string;
+          round_id: string | null;
           cell_index: number;
           is_hit: boolean;
           created_at: string;
@@ -268,6 +280,7 @@ export interface Database {
           room_id: string;
           shooter_id: string;
           target_id: string;
+          round_id?: string | null;
           cell_index: number;
           is_hit: boolean;
           created_at?: string;
@@ -277,6 +290,7 @@ export interface Database {
           room_id?: string;
           shooter_id?: string;
           target_id?: string;
+          round_id?: string | null;
           cell_index?: number;
           is_hit?: boolean;
           created_at?: string;
@@ -287,6 +301,7 @@ export interface Database {
           id: string;
           room_id: string;
           setter_id: string;
+          round_id: string | null;
           code: string[];
           created_at: string;
         };
@@ -294,6 +309,7 @@ export interface Database {
           id?: string;
           room_id: string;
           setter_id: string;
+          round_id?: string | null;
           code: string[];
           created_at?: string;
         };
@@ -301,6 +317,7 @@ export interface Database {
           id?: string;
           room_id?: string;
           setter_id?: string;
+          round_id?: string | null;
           code?: string[];
           created_at?: string;
         };
@@ -310,6 +327,7 @@ export interface Database {
           id: string;
           room_id: string;
           guesser_id: string;
+          round_id: string | null;
           guess: string[];
           bulls: number;
           hits: number;
@@ -319,6 +337,7 @@ export interface Database {
           id?: string;
           room_id: string;
           guesser_id: string;
+          round_id?: string | null;
           guess: string[];
           bulls: number;
           hits: number;
@@ -328,6 +347,7 @@ export interface Database {
           id?: string;
           room_id?: string;
           guesser_id?: string;
+          round_id?: string | null;
           guess?: string[];
           bulls?: number;
           hits?: number;
