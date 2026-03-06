@@ -18,7 +18,7 @@ export interface GameSelectionViewProps {
 
 const GAMES: { id: GameId; label: string; icon: string }[] = [
   { id: "truth_or_lie", label: "אמת או שקר", icon: "🎭" },
-  { id: "eretz_ir", label: "ארץ עיר", icon: "🌍" },
+  { id: "eretz_ir", label: "ארץ עיר", icon: "🏙️" },
   { id: "battleship", label: "צוללות", icon: "🚢" },
   { id: "mastermind", label: "בול פגיעה", icon: "🎯" },
 ];

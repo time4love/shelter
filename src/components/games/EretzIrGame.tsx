@@ -60,7 +60,7 @@ export function EretzIrGame({
     >
       <div className="p-4">
         <h1 className="mb-2 px-4 text-center text-2xl font-bold text-foreground">
-          ארץ עיר 🌍
+          ארץ עיר 🏙️
         </h1>
 
         {state.phase === "rolling" && (
