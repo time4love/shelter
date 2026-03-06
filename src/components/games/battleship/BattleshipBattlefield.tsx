@@ -109,6 +109,7 @@ export function BattleshipBattlefield({
 
   const lastProcessedCountRef = useRef<number>(-1);
   const initialSyncDoneRef = useRef(false);
+  const turnLogicRunningRef = useRef(false);
   useEffect(() => {
     if (!isHost) return;
     if (!initialSyncDoneRef.current) {
@@ -117,64 +118,75 @@ export function BattleshipBattlefield({
       return;
     }
     if (shots.length <= lastProcessedCountRef.current) return;
-    lastProcessedCountRef.current = shots.length;
+    if (turnLogicRunningRef.current) return;
+    turnLogicRunningRef.current = true;
+    const countWhenStarted = shots.length;
+    lastProcessedCountRef.current = countWhenStarted;
     const runTurnLogic = async () => {
-      const { data: shotsList } = await battleshipShots.fetchByRoomId(supabase, room.id, roundId);
-      const allShots: BattleshipShotRow[] = (shotsList ?? []) as BattleshipShotRow[];
-      const lastShot = allShots[allShots.length - 1];
-      if (!lastShot) return;
+      try {
+        const { data: shotsList } = await battleshipShots.fetchByRoomId(supabase, room.id, roundId);
+        const allShots: BattleshipShotRow[] = (shotsList ?? []) as BattleshipShotRow[];
+        const lastShot = allShots[allShots.length - 1];
+        if (!lastShot) return;
 
-      const hitsByTarget = new Map<string, number>();
-      allShots.forEach((s) => {
-        if (s.is_hit) hitsByTarget.set(s.target_id, (hitsByTarget.get(s.target_id) ?? 0) + 1);
-      });
-      const stillAlive = alivePlayers.filter((id) => (hitsByTarget.get(id) ?? 0) < TOTAL_SHIP_CELLS);
-      if (stillAlive.length <= 1) {
-        const winnerId = stillAlive[0] ?? null;
-        if (winnerId) {
-          const winner = players.find((p) => p.id === winnerId);
-          if (winner) await playersApi.update(supabase, winnerId, { score: winner.score + 20 });
+        const hitsByTarget = new Map<string, number>();
+        allShots.forEach((s) => {
+          if (s.is_hit) hitsByTarget.set(s.target_id, (hitsByTarget.get(s.target_id) ?? 0) + 1);
+        });
+        const stillAlive = alivePlayers.filter((id) => (hitsByTarget.get(id) ?? 0) < TOTAL_SHIP_CELLS);
+        if (stillAlive.length <= 1) {
+          const winnerId = stillAlive[0] ?? null;
+          if (winnerId) {
+            const winner = players.find((p) => p.id === winnerId);
+            if (winner) await playersApi.update(supabase, winnerId, { score: winner.score + 20 });
+          }
+          const { error } = await roomsApi.updateGameState(supabase, room.id, { phase: "round_results", winnerId, roundId });
+          if (error) throw error;
+          return;
         }
-        await roomsApi.updateGameState(supabase, room.id, { phase: "round_results", winnerId, roundId });
-        return;
-      }
 
-      // Use actual shooter from the shot (handles multiple shots from same player before state updated).
-      const shooterId = lastShot.shooter_id;
+        const shooterId = lastShot.shooter_id;
 
-      if (lastShot.is_hit) {
-        if (stillAlive.length < alivePlayers.length) {
-          const nextOpponent = stillAlive.find((id) => id !== shooterId);
-          const newTargetId = stillAlive.includes(lastShot.target_id)
-            ? lastShot.target_id
-            : (targetQueue.find((id) => stillAlive.includes(id)) ?? nextOpponent ?? shooterId);
-          await roomsApi.updateGameState(supabase, room.id, {
-            phase: "playing",
-            currentTurnId: shooterId,
-            targetQueue: targetQueue.filter((id) => stillAlive.includes(id)),
-            currentTargetId: newTargetId,
-            alivePlayers: stillAlive,
-            roundId,
-          });
+        if (lastShot.is_hit) {
+          if (stillAlive.length < alivePlayers.length) {
+            const nextOpponent = stillAlive.find((id) => id !== shooterId);
+            const newTargetId = stillAlive.includes(lastShot.target_id)
+              ? lastShot.target_id
+              : (targetQueue.find((id) => stillAlive.includes(id)) ?? nextOpponent ?? shooterId);
+            const { error } = await roomsApi.updateGameState(supabase, room.id, {
+              phase: "playing",
+              currentTurnId: shooterId,
+              targetQueue: targetQueue.filter((id) => stillAlive.includes(id)),
+              currentTargetId: newTargetId,
+              alivePlayers: stillAlive,
+              roundId,
+            });
+            if (error) throw error;
+          }
+          return;
         }
-        return;
+
+        const idx = stillAlive.indexOf(shooterId);
+        const nextIdx = idx === -1 ? 0 : (idx + 1) % stillAlive.length;
+        const newTurnId = stillAlive[nextIdx]!;
+        const newQueue = stillAlive.filter((id) => id !== newTurnId);
+        const newTargetId = newQueue[0] ?? newTurnId;
+
+        const { error } = await roomsApi.updateGameState(supabase, room.id, {
+          phase: "playing",
+          currentTurnId: newTurnId,
+          targetQueue: newQueue,
+          currentTargetId: newTargetId,
+          alivePlayers: stillAlive,
+          roundId,
+        });
+        if (error) throw error;
+      } catch (err) {
+        console.error("Battleship turn logic error:", err);
+        lastProcessedCountRef.current = Math.max(-1, countWhenStarted - 1);
+      } finally {
+        turnLogicRunningRef.current = false;
       }
-
-      // Miss: pass turn to next player after the one who shot; they get a fresh target queue.
-      const idx = stillAlive.indexOf(shooterId);
-      const nextIdx = idx === -1 ? 0 : (idx + 1) % stillAlive.length;
-      const newTurnId = stillAlive[nextIdx]!;
-      const newQueue = stillAlive.filter((id) => id !== newTurnId);
-      const newTargetId = newQueue[0] ?? newTurnId;
-
-      await roomsApi.updateGameState(supabase, room.id, {
-        phase: "playing",
-        currentTurnId: newTurnId,
-        targetQueue: newQueue,
-        currentTargetId: newTargetId,
-        alivePlayers: stillAlive,
-        roundId,
-      });
     };
     runTurnLogic();
   }, [isHost, shots.length, room.id, roundId, supabase, currentTurnId, targetQueue, currentTargetId, alivePlayers, players]);
