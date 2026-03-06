@@ -32,6 +32,7 @@ export function BattleshipBattlefield({
   const [boards, setBoards] = useState<BattleshipBoardRow[]>([]);
   const [shots, setShots] = useState<BattleshipShotRow[]>([]);
   const [shooting, setShooting] = useState(false);
+  const shootingRef = useRef(false);
   const { currentTurnId, targetQueue, currentTargetId, alivePlayers } = gameState;
   const isMyTurn = currentTurnId === myPlayerInRoom.id;
 
@@ -78,7 +79,10 @@ export function BattleshipBattlefield({
 
   // After shooting, keep UI disabled until turn actually passes (prevents multiple shots before host updates).
   useEffect(() => {
-    if (!isMyTurn) setShooting(false);
+    if (!isMyTurn) {
+      shootingRef.current = false;
+      setShooting(false);
+    }
   }, [isMyTurn]);
 
   const targetBoard = boards.find((b) => b.player_id === currentTargetId);
@@ -135,15 +139,18 @@ export function BattleshipBattlefield({
         return;
       }
 
+      // Use actual shooter from the shot (handles multiple shots from same player before state updated).
+      const shooterId = lastShot.shooter_id;
+
       if (lastShot.is_hit) {
         if (stillAlive.length < alivePlayers.length) {
-          const nextOpponent = stillAlive.find((id) => id !== currentTurnId);
-          const newTargetId = stillAlive.includes(currentTargetId)
-            ? currentTargetId
-            : (targetQueue.find((id) => stillAlive.includes(id)) ?? nextOpponent ?? currentTurnId);
+          const nextOpponent = stillAlive.find((id) => id !== shooterId);
+          const newTargetId = stillAlive.includes(lastShot.target_id)
+            ? lastShot.target_id
+            : (targetQueue.find((id) => stillAlive.includes(id)) ?? nextOpponent ?? shooterId);
           await roomsApi.updateGameState(supabase, room.id, {
             phase: "playing",
-            currentTurnId,
+            currentTurnId: shooterId,
             targetQueue: targetQueue.filter((id) => stillAlive.includes(id)),
             currentTargetId: newTargetId,
             alivePlayers: stillAlive,
@@ -153,9 +160,9 @@ export function BattleshipBattlefield({
         return;
       }
 
-      // Miss: always pass turn to next player; they get a fresh target queue (all other alive players).
-      const idx = stillAlive.indexOf(currentTurnId);
-      const nextIdx = (idx + 1) % stillAlive.length;
+      // Miss: pass turn to next player after the one who shot; they get a fresh target queue.
+      const idx = stillAlive.indexOf(shooterId);
+      const nextIdx = idx === -1 ? 0 : (idx + 1) % stillAlive.length;
       const newTurnId = stillAlive[nextIdx]!;
       const newQueue = stillAlive.filter((id) => id !== newTurnId);
       const newTargetId = newQueue[0] ?? newTurnId;
@@ -175,6 +182,9 @@ export function BattleshipBattlefield({
   async function handleCellClick(cellIndex: number) {
     if (!isMyTurn || shooting || shotCellsTarget.has(cellIndex)) return;
     if (!targetBoard) return;
+    if (shootingRef.current) return;
+    shootingRef.current = true;
+    setShooting(true);
     let isHit = false;
     for (const ship of targetBoard.ships ?? []) {
       if (ship.cells.includes(cellIndex)) {
@@ -182,7 +192,6 @@ export function BattleshipBattlefield({
         break;
       }
     }
-    setShooting(true);
     try {
       const { error } = await battleshipShots.insert(supabase, {
         room_id: room.id,
@@ -197,9 +206,13 @@ export function BattleshipBattlefield({
         await playersApi.update(supabase, myPlayerInRoom.id, { score: myPlayerInRoom.score + 10 });
       }
       await fetchShots();
-      // On hit: same player keeps turn — clear shooting so they can shoot again. On miss: keep shooting true until turn passes (useEffect clears when !isMyTurn).
-      if (isHit) setShooting(false);
+      // On hit: same player keeps turn — clear so they can shoot again. On miss: keep disabled until turn passes (useEffect clears when !isMyTurn).
+      if (isHit) {
+        shootingRef.current = false;
+        setShooting(false);
+      }
     } catch {
+      shootingRef.current = false;
       setShooting(false);
     }
   }
