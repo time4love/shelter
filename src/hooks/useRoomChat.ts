@@ -24,12 +24,13 @@ export interface UseRoomChatResult {
 const BUBBLE_DURATION_MS = 4000;
 
 /**
- * Global room chat: messages, unread indicator, floating soap bubbles.
+ * Room chat: messages, unread indicator, floating soap bubbles.
+ * For use only when inside an active room (roomId and myPlayerIdInRoom must be the room's and current player's IDs).
  * Listens to chat_messages Realtime even when chat overlay is closed.
  */
 export function useRoomChat(
-  roomId: string | null,
-  myPlayerId: string,
+  roomId: string,
+  myPlayerIdInRoom: string,
   players: PlayerRow[]
 ): UseRoomChatResult {
   const [messages, setMessages] = useState<ChatMessageRow[]>([]);
@@ -51,30 +52,25 @@ export function useRoomChat(
     if (open) setHasUnread(false);
   }, []);
 
-  // Initial fetch
+  // Initial fetch (no-op when not yet in room)
   useEffect(() => {
-    if (!roomId || !myPlayerId) return;
-    const id = roomId as string;
+    if (!roomId || !myPlayerIdInRoom) return;
     let cancelled = false;
     const supabase = createBrowserClient();
     async function fetchMessages() {
       const { data, error: fetchErr } = await supabase
         .from("chat_messages")
         .select("*")
-        .eq("room_id", id)
+        .eq("room_id", roomId)
         .order("created_at", { ascending: true });
       if (cancelled) return;
-      if (fetchErr) {
-        setError("אופס, משהו השתבש. נסה שוב!");
-        return;
-      }
-      setMessages((data ?? []) as ChatMessageRow[]);
+      if (!fetchErr) setMessages((data ?? []) as ChatMessageRow[]);
     }
     fetchMessages();
     return () => {
       cancelled = true;
     };
-  }, [roomId, myPlayerId]);
+  }, [roomId, myPlayerIdInRoom]);
 
   // Realtime: listen globally so we get new messages even when chat is closed
   useEffect(() => {
@@ -97,7 +93,7 @@ export function useRoomChat(
           setMessages((prev) => [...prev, row]);
 
           const chatClosed = !isChatOpenRef.current;
-          const isFromOther = row.player_id !== myPlayerId;
+          const isFromOther = row.player_id !== myPlayerIdInRoom;
           if (chatClosed && isFromOther) {
             setHasUnread(true);
             const author = playersMapRef.current.get(row.player_id);
@@ -120,16 +116,17 @@ export function useRoomChat(
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId, myPlayerId]);
+  }, [roomId, myPlayerIdInRoom]);
 
   const sendMessage = useCallback(
     async (text: string): Promise<{ error: string | null }> => {
-      if (!roomId || !myPlayerId || !text.trim()) return { error: null };
+      const trimmed = text.trim();
+      if (!trimmed || !roomId || !myPlayerIdInRoom) return { error: null };
       const supabase = createBrowserClient();
       const insertRow: Database["public"]["Tables"]["chat_messages"]["Insert"] = {
         room_id: roomId,
-        player_id: myPlayerId,
-        message: text.trim(),
+        player_id: myPlayerIdInRoom,
+        message: trimmed,
       };
       const { error: insertErr } = await supabase.from("chat_messages").insert(insertRow as never);
       if (insertErr) {
@@ -138,7 +135,7 @@ export function useRoomChat(
       }
       return { error: null };
     },
-    [roomId, myPlayerId]
+    [roomId, myPlayerIdInRoom]
   );
 
   return {

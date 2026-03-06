@@ -53,7 +53,8 @@ export default function RoomPage() {
   const [soundboardOpen, setSoundboardOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const chat = useRoomChat(room?.id ?? null, playerId, players);
+  // Chat only used when in active room; pass empty string until then (hook no-ops)
+  const chat = useRoomChat(room?.id ?? "", myPlayerInRoom?.id ?? "", players);
 
   useEffect(() => {
     if (room) setRoomId(room.id);
