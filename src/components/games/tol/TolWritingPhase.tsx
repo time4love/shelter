@@ -49,7 +49,7 @@ export function TolWritingPhase({
       setError("כתוב ארבעה משפטים");
       return;
     }
-    const truthCount = texts.map((_, i) => (i === truthIndex ? 1 : 0)).reduce((a, b) => a + b, 0);
+    const truthCount = texts.map((_, i) => (i === truthIndex ? 1 : 0)).reduce<number>((a, b) => a + b, 0);
     if (truthCount !== 1) {
       setError("בחר משפט אחד שהוא האמת");
       return;
