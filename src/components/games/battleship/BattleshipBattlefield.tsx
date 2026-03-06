@@ -76,6 +76,11 @@ export function BattleshipBattlefield({
     };
   }, [room.id, roundId, supabase, fetchBoards, fetchShots]);
 
+  // After shooting, keep UI disabled until turn actually passes (prevents multiple shots before host updates).
+  useEffect(() => {
+    if (!isMyTurn) setShooting(false);
+  }, [isMyTurn]);
+
   const targetBoard = boards.find((b) => b.player_id === currentTargetId);
   const shotsOnTarget = shots.filter((s) => s.target_id === currentTargetId);
   const shotCellsTarget = new Set(shotsOnTarget.map((s) => s.cell_index));
@@ -148,20 +153,12 @@ export function BattleshipBattlefield({
         return;
       }
 
-      let newQueue = targetQueue.filter((id) => id !== currentTargetId);
-      let newTargetId = currentTargetId;
-      let newTurnId = currentTurnId;
-      newQueue = newQueue.filter((id) => stillAlive.includes(id));
-
-      if (newQueue.length > 0) {
-        newTargetId = newQueue[0];
-      } else {
-        const idx = stillAlive.indexOf(currentTurnId);
-        const nextIdx = (idx + 1) % stillAlive.length;
-        newTurnId = stillAlive[nextIdx];
-        newQueue = stillAlive.filter((id) => id !== newTurnId);
-        newTargetId = newQueue[0] ?? newTurnId;
-      }
+      // Miss: always pass turn to next player; they get a fresh target queue (all other alive players).
+      const idx = stillAlive.indexOf(currentTurnId);
+      const nextIdx = (idx + 1) % stillAlive.length;
+      const newTurnId = stillAlive[nextIdx]!;
+      const newQueue = stillAlive.filter((id) => id !== newTurnId);
+      const newTargetId = newQueue[0] ?? newTurnId;
 
       await roomsApi.updateGameState(supabase, room.id, {
         phase: "playing",
@@ -200,9 +197,8 @@ export function BattleshipBattlefield({
         await playersApi.update(supabase, myPlayerInRoom.id, { score: myPlayerInRoom.score + 10 });
       }
       await fetchShots();
+      // Keep shooting true until turn passes (useEffect clears when !isMyTurn)
     } catch {
-      // Friendly error
-    } finally {
       setShooting(false);
     }
   }
