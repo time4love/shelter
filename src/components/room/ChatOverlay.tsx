@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ChatMessageRow, PlayerRow } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
@@ -84,6 +85,7 @@ export function ChatOverlay({
     async (sound: { url: string; name: string }) => {
       if (!broadcastSound || quickSoundSending) return;
       broadcastSound(sound.url);
+      if (playSound) playSound(sound.url);
       setQuickSoundSending(true);
       const messageText = `שלח/ה צליל: ${sound.name} 🔊`;
       const { error } = await sendMessage(messageText);
@@ -92,7 +94,7 @@ export function ChatOverlay({
         // Still played; only chat send failed
       }
     },
-    [broadcastSound, sendMessage, quickSoundSending]
+    [broadcastSound, playSound, sendMessage, quickSoundSending]
   );
 
   const error = sendError;
@@ -240,17 +242,20 @@ export function ChatOverlay({
         </form>
       </div>
 
-      {canOpenSoundManager && (
-        <SoundManagerModal
-          myPlayerInRoom={myPlayerInRoom}
-          supabase={supabase!}
-          broadcastSound={broadcastSound!}
-          playSound={playSound!}
-          refetchMyPlayer={refetchMyPlayer!}
-          open={isSoundManagerOpen}
-          onOpenChange={setIsSoundManagerOpen}
-        />
-      )}
+      {canOpenSoundManager &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <SoundManagerModal
+            myPlayerInRoom={myPlayerInRoom}
+            supabase={supabase!}
+            broadcastSound={broadcastSound!}
+            playSound={playSound!}
+            refetchMyPlayer={refetchMyPlayer!}
+            open={isSoundManagerOpen}
+            onOpenChange={setIsSoundManagerOpen}
+          />,
+          document.body
+        )}
     </div>
   );
 }

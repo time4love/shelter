@@ -92,7 +92,7 @@ export function SoundManagerModal({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex flex-col justify-end bg-black/40 p-0"
+      className="fixed inset-0 z-[70] flex flex-col justify-end bg-black/40 p-0 pointer-events-auto"
       dir="rtl"
       lang="he"
       role="dialog"
