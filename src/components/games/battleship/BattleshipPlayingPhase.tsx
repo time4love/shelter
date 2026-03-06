@@ -37,12 +37,12 @@ export function BattleshipPlayingPhase({
 
   const fetchShots = useCallback(async () => {
     const { data } = await battleshipShots.fetchByRoomId(supabase, room.id);
-    setShots(data ?? []);
+    setShots((data ?? []) as BattleshipShotRow[]);
   }, [room.id, supabase]);
 
   const fetchSubs = useCallback(async () => {
     const { data } = await battleshipSubs.fetchByRoomId(supabase, room.id);
-    setSubs(data ?? []);
+    setSubs((data ?? []) as BattleshipSubRow[]);
   }, [room.id, supabase]);
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export function BattleshipPlayingPhase({
     setLastShotCount(shots.length);
     const timer = setTimeout(async () => {
       const { data: shotsList } = await battleshipShots.fetchByRoomId(supabase, room.id);
-      const latestShots = shotsList ?? [];
+      const latestShots: BattleshipShotRow[] = (shotsList ?? []) as BattleshipShotRow[];
       const hitCountByPlayer = new Map<string, number>();
       latestShots.forEach((s) => {
         if (s.result === "hit" && s.hit_player_id) {
