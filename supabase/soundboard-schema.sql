@@ -44,4 +44,4 @@ CREATE POLICY "anon_audio_clips_delete"
 ALTER TABLE public.players
   ADD COLUMN IF NOT EXISTS sounds JSONB DEFAULT '{}'::jsonb;
 
-COMMENT ON COLUMN public.players.sounds IS 'URLs of up to 3 voice clips: keys "1", "2", "3"';
+COMMENT ON COLUMN public.players.sounds IS 'Up to 3 voice clips: keys "1","2","3", values { "url": "...", "name": "..." }. Legacy: value may be plain URL string.';

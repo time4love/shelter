@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import type { PlayerRow } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
@@ -7,6 +8,7 @@ import { Megaphone, Play, Trash2, X } from "lucide-react";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { players as playersMutations } from "@/lib/supabase/typed-mutations";
 import { usePlayerStore } from "@/store/player-store";
+import { normalizePlayerSounds, getDefaultSoundName } from "@/lib/utils/player-sounds";
 import type { PlayerSoundsMap } from "@/types/database";
 
 const SLOTS: (1 | 2 | 3)[] = [1, 2, 3];
@@ -37,11 +39,13 @@ export function GlobalSoundboard({
 }: GlobalSoundboardProps) {
   const playerSounds = usePlayerStore((s) => s.playerSounds ?? null);
   const merged: PlayerSoundsMap = {
-    ...(playerSounds ?? {}),
-    ...(myPlayerInRoom?.sounds ?? {}),
+    ...normalizePlayerSounds(playerSounds ?? {}),
+    ...normalizePlayerSounds((myPlayerInRoom?.sounds ?? {}) as Record<string, string | { url: string; name: string }>),
   };
   const sounds: PlayerSoundsMap | null =
     Object.keys(merged).length > 0 ? merged : null;
+
+  const [editingSlot, setEditingSlot] = useState<null | (1 | 2 | 3)>(null);
 
   const handlePlay = (url: string) => {
     broadcastSound(url);
@@ -60,6 +64,29 @@ export function GlobalSoundboard({
       await refetchMyPlayer();
     }
   };
+
+  const handleNameBlur = useCallback(
+    async (slot: 1 | 2 | 3, newName: string) => {
+      setEditingSlot(null);
+      if (!myPlayerInRoom || !sounds) return;
+      const entry = sounds[String(slot)];
+      if (!entry) return;
+      const trimmed = newName.trim() || getDefaultSoundName(String(slot));
+      if (trimmed === entry.name) return;
+      const next: PlayerSoundsMap = {
+        ...sounds,
+        [String(slot)]: { url: entry.url, name: trimmed },
+      };
+      const { error } = await playersMutations.update(supabase, myPlayerInRoom.id, {
+        sounds: next,
+      });
+      if (!error) {
+        usePlayerStore.getState().setPlayerSounds(next);
+        await refetchMyPlayer();
+      }
+    },
+    [myPlayerInRoom, sounds, supabase, refetchMyPlayer]
+  );
 
   if (!open) return null;
 
@@ -100,7 +127,8 @@ export function GlobalSoundboard({
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {SLOTS.map((slot) => {
-              const url = sounds?.[String(slot)];
+              const entry = sounds?.[String(slot)];
+              const url = entry?.url;
               return (
                 <div
                   key={slot}
@@ -126,7 +154,29 @@ export function GlobalSoundboard({
                           <Trash2 className="h-5 w-5" />
                         </button>
                       </div>
-                      <span className="text-sm text-foreground/70">צליל {slot}</span>
+                      {editingSlot === slot ? (
+                        <input
+                          type="text"
+                          className="w-full max-w-[140px] text-center text-sm text-foreground/90 bg-white/80 border border-foreground/20 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-mint-green"
+                          defaultValue={entry?.name ?? getDefaultSoundName(String(slot))}
+                          onBlur={(e) => handleNameBlur(slot, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.currentTarget.blur();
+                            }
+                          }}
+                          autoFocus
+                          aria-label="שם הצליל"
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setEditingSlot(slot)}
+                          className="text-sm text-foreground/70 hover:text-foreground/90 underline decoration-dotted cursor-pointer min-h-[1.5rem]"
+                        >
+                          {entry?.name ?? getDefaultSoundName(String(slot))}
+                        </button>
+                      )}
                     </>
                   ) : (
                     <div className="flex flex-col items-center gap-2">

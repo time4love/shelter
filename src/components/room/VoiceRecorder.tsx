@@ -6,6 +6,7 @@ import type { Database } from "@/types/database";
 import { Mic, Loader2 } from "lucide-react";
 import { players as playersMutations } from "@/lib/supabase/typed-mutations";
 import { usePlayerStore } from "@/store/player-store";
+import { getDefaultSoundName } from "@/lib/utils/player-sounds";
 import type { PlayerSoundsMap } from "@/types/database";
 
 const MAX_RECORDING_MS = 5000;
@@ -83,7 +84,7 @@ export function VoiceRecorder({
 
         const nextSounds: PlayerSoundsMap = {
           ...(currentSounds || {}),
-          [String(slot)]: publicUrl,
+          [String(slot)]: { url: publicUrl, name: getDefaultSoundName(String(slot)) },
         };
         const { error: updateError } = await playersMutations.update(supabase, playerDbId, {
           sounds: nextSounds,

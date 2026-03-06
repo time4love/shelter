@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { PlayerSoundsMap } from "@/types/database";
+import { normalizePlayerSounds, type RawPlayerSounds } from "@/lib/utils/player-sounds";
 
 /**
  * Generates a simple UUID v4 for local player identity.
@@ -19,20 +21,19 @@ function generatePlayerId(): string {
 export const AVATAR_OPTIONS = ["🐶", "🐱", "🐼", "🦊", "🐰", "🦁"] as const;
 export type AvatarOption = (typeof AVATAR_OPTIONS)[number];
 
-/** Persisted soundboard clip slot → public URL. Carried across rooms via localStorage. */
-export type PlayerSoundsMap = Record<string, string>;
+export type { PlayerSoundsMap };
 
 export interface PlayerState {
   playerId: string;
   playerName: string;
   playerAvatar: AvatarOption | string;
   roomId: string | null;
-  /** Soundboard slot → URL; persisted so clips carry across rooms. */
+  /** Soundboard slot → { url, name }; persisted so clips carry across rooms. */
   playerSounds: PlayerSoundsMap | null;
   setPlayerName: (name: string) => void;
   setPlayerAvatar: (avatar: AvatarOption | string) => void;
   setRoomId: (roomId: string | null) => void;
-  setPlayerSounds: (sounds: Record<string, string>) => void;
+  setPlayerSounds: (sounds: PlayerSoundsMap) => void;
   /** Call when joining a room; optionally set name/avatar if not set */
   joinRoom: (roomId: string, name?: string, avatar?: AvatarOption | string) => void;
   leaveRoom: () => void;
@@ -80,11 +81,15 @@ export const usePlayerStore = create<PlayerState>()(
         roomId: s.roomId,
         playerSounds: s.playerSounds ?? {},
       }),
-      // Hydration: ensure playerId exists after rehydrate
+      // Hydration: ensure playerId exists; normalize legacy playerSounds (string URLs → { url, name })
       onRehydrateStorage: () => (state) => {
-        if (state && !state.playerId && typeof window !== "undefined") {
-          usePlayerStore.setState({ playerId: generatePlayerId() });
+        if (!state || typeof window === "undefined") return;
+        const updates: Partial<PlayerState> = {};
+        if (!state.playerId) updates.playerId = generatePlayerId();
+        if (state.playerSounds && typeof state.playerSounds === "object") {
+          updates.playerSounds = normalizePlayerSounds(state.playerSounds as RawPlayerSounds);
         }
+        if (Object.keys(updates).length > 0) usePlayerStore.setState(updates);
       },
     }
   )

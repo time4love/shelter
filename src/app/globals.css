@@ -53,3 +53,12 @@ body {
 .animate-float-bubble {
   animation: floatUpFade 4s ease-in-out forwards;
 }
+
+/* Hide scrollbar but keep scroll (e.g. Quick Sounds in chat) */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

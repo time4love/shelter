@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { normalizePlayerSounds, type RawPlayerSounds } from "@/lib/utils/player-sounds";
 import { usePlayerStore, AVATAR_OPTIONS, type AvatarOption } from "@/store/player-store";
 import type { Database } from "@/types/database";
 import type { RoomRow } from "@/types/database";
@@ -54,14 +55,15 @@ export function JoinModal({
       usePlayerStore.getState().setPlayerAvatar(playerAvatar);
       usePlayerStore.getState().setRoomId(room.id);
 
-      const playerSounds = usePlayerStore.getState().playerSounds ?? {};
+      const rawSounds = usePlayerStore.getState().playerSounds ?? {};
+      const sounds = normalizePlayerSounds(rawSounds as RawPlayerSounds);
       const { error } = await playersApi.upsert(supabase, {
         room_id: room.id,
         client_id: localPlayerId,
         name,
         avatar: playerAvatar,
         is_host: room.host_id === localPlayerId,
-        sounds: playerSounds,
+        sounds,
       });
       if (error) throw error;
 

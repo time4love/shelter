@@ -124,6 +124,7 @@ export default function RoomPage() {
             myPlayerInRoom={myPlayerInRoom}
             players={players}
             onClose={() => chat.setIsChatOpen(false)}
+            broadcastSound={broadcastSound}
           />
         )}
         <GlobalLeaderboard
@@ -185,6 +186,7 @@ export default function RoomPage() {
             myPlayerInRoom={myPlayerInRoom}
             players={players}
             onClose={() => chat.setIsChatOpen(false)}
+            broadcastSound={broadcastSound}
           />
         )}
         <GlobalLeaderboard
@@ -247,6 +249,7 @@ export default function RoomPage() {
               myPlayerInRoom={myPlayerInRoom}
               players={players}
               onClose={() => chat.setIsChatOpen(false)}
+              broadcastSound={broadcastSound}
             />
           )}
           <GlobalLeaderboard

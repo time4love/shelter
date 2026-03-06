@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatMessageRow, PlayerRow } from "@/types/database";
 import { Send, X } from "lucide-react";
+import { usePlayerStore } from "@/store/player-store";
+import { normalizePlayerSounds } from "@/lib/utils/player-sounds";
+import type { RawPlayerSounds } from "@/lib/utils/player-sounds";
 
 export interface ChatOverlayProps {
   messages: ChatMessageRow[];
@@ -11,6 +14,8 @@ export interface ChatOverlayProps {
   myPlayerInRoom: PlayerRow;
   players: PlayerRow[];
   onClose: () => void;
+  /** Play sound to the room and optionally send a chat line (e.g. for Quick Sounds). */
+  broadcastSound?: (url: string) => void;
 }
 
 /**
@@ -24,11 +29,19 @@ export function ChatOverlay({
   myPlayerInRoom,
   players,
   onClose,
+  broadcastSound,
 }: ChatOverlayProps) {
   const [inputValue, setInputValue] = useState("");
   const [sending, setSending] = useState(false);
+  const [quickSoundSending, setQuickSoundSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const rawSounds = usePlayerStore((s) => s.playerSounds ?? {});
+  const playerSounds = normalizePlayerSounds(rawSounds as RawPlayerSounds);
+  const quickSoundEntries = Object.entries(playerSounds).filter(
+    ([_, entry]) => entry?.url
+  ) as [string, { url: string; name: string }][];
 
   const playersMap = useRef<Map<string, { name: string; avatar: string }>>(new Map());
   playersMap.current = new Map(players.map((p) => [p.id, { name: p.name, avatar: p.avatar }]));
@@ -51,6 +64,21 @@ export function ChatOverlay({
     setSending(false);
     if (error) setInputValue(text);
   };
+
+  const handleQuickSound = useCallback(
+    async (sound: { url: string; name: string }) => {
+      if (!broadcastSound || quickSoundSending) return;
+      broadcastSound(sound.url);
+      setQuickSoundSending(true);
+      const messageText = `שלח/ה צליל: ${sound.name} 🔊`;
+      const { error } = await sendMessage(messageText);
+      setQuickSoundSending(false);
+      if (error) {
+        // Still played; only chat send failed
+      }
+    },
+    [broadcastSound, sendMessage, quickSoundSending]
+  );
 
   const error = sendError;
 
@@ -135,6 +163,24 @@ export function ChatOverlay({
           })}
           <div ref={messagesEndRef} />
         </div>
+
+        {quickSoundEntries.length > 0 && (
+          <div className="flex-none p-2 bg-white/80 border-t border-foreground/10 flex gap-2 overflow-x-auto whitespace-nowrap hide-scrollbar">
+            {quickSoundEntries.map(([slot, sound]) => (
+              <button
+                key={slot}
+                type="button"
+                onClick={() => handleQuickSound(sound)}
+                disabled={quickSoundSending}
+                className="bg-purple-100 text-purple-800 text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1 active:scale-95 transition-transform disabled:opacity-60 shrink-0"
+                aria-label={`השמע צליל: ${sound.name}`}
+              >
+                <span aria-hidden>🔊</span>
+                <span>{sound.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         <form
           onSubmit={handleSubmit}
