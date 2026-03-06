@@ -15,6 +15,8 @@ export interface BottomNavBarProps {
   onOpenProfile: () => void;
   /** Opens the Chat overlay */
   onOpenChat?: () => void;
+  /** When true, show unread indicator (red dot) on Chat button */
+  chatHasUnread?: boolean;
 }
 
 /**
@@ -28,6 +30,7 @@ export function BottomNavBar({
   onOpenLeaderboard,
   onOpenProfile,
   onOpenChat,
+  chatHasUnread = false,
 }: BottomNavBarProps) {
   return (
     <nav
@@ -81,9 +84,15 @@ export function BottomNavBar({
             <button
               type="button"
               onClick={onOpenChat}
-              className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-14 rounded-2xl text-sky-blue hover:bg-sky-blue/15 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-sky-blue focus:ring-offset-2"
-              aria-label="צ'אט הקבוצה"
+              className="relative flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-14 rounded-2xl text-sky-blue hover:bg-sky-blue/15 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-sky-blue focus:ring-offset-2"
+              aria-label={chatHasUnread ? "צ'אט הקבוצה (הודעות חדשות)" : "צ'אט הקבוצה"}
             >
+              {chatHasUnread && (
+                <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border border-white" />
+                </span>
+              )}
               <MessageCircle className="h-7 w-7" strokeWidth={2} />
               <span className="text-[10px] font-medium text-foreground/70">צ'אט</span>
             </button>

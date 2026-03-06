@@ -17,6 +17,8 @@ export { BottomNavBar } from "./BottomNavBar";
 export type { BottomNavBarProps } from "./BottomNavBar";
 export { ChatOverlay } from "./ChatOverlay";
 export type { ChatOverlayProps } from "./ChatOverlay";
+export { FloatingChatBubbles } from "./FloatingChatBubbles";
+export type { FloatingChatBubblesProps } from "./FloatingChatBubbles";
 export { ProfileEditModal } from "./ProfileEditModal";
 export type { ProfileEditModalProps } from "./ProfileEditModal";
 export { VoiceRecorder } from "./VoiceRecorder";

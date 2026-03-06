@@ -7,8 +7,9 @@ import { usePlayerStore } from "@/store/player-store";
 import { useEnsurePlayerId } from "@/hooks/useEnsurePlayerId";
 import { useRoomAndJoinStatus } from "@/hooks/useRoomAndJoinStatus";
 import { useLobbyPlayers } from "@/hooks/useLobbyPlayers";
-import { AudioUnlockBanner, BottomNavBar, ChatOverlay, GameEngine, GameSelectionView, GlobalLeaderboard, GlobalSoundboard, JoinModal, LobbyView, ProfileEditModal, RoomNotFoundView, TopMenu } from "@/components/room";
+import { AudioUnlockBanner, BottomNavBar, ChatOverlay, FloatingChatBubbles, GameEngine, GameSelectionView, GlobalLeaderboard, GlobalSoundboard, JoinModal, LobbyView, ProfileEditModal, RoomNotFoundView, TopMenu } from "@/components/room";
 import { useRoomAudio } from "@/hooks/useRoomAudio";
+import { useRoomChat } from "@/hooks/useRoomChat";
 
 /**
  * Room page – strict flow:
@@ -51,7 +52,8 @@ export default function RoomPage() {
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [soundboardOpen, setSoundboardOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
+
+  const chat = useRoomChat(room?.id ?? null, playerId, players);
 
   useEffect(() => {
     if (room) setRoomId(room.id);
@@ -109,15 +111,18 @@ export default function RoomPage() {
           onOpenSoundboard={() => setSoundboardOpen(true)}
           onOpenLeaderboard={() => setLeaderboardOpen(true)}
           onOpenProfile={() => setProfileOpen(true)}
-          onOpenChat={() => setChatOpen(true)}
+          onOpenChat={() => chat.setIsChatOpen(true)}
+          chatHasUnread={chat.hasUnread}
         />
-        {chatOpen && room && myPlayerInRoom && (
+        <FloatingChatBubbles bubbles={chat.floatingBubbles} />
+        {chat.isChatOpen && myPlayerInRoom && (
           <ChatOverlay
-            roomId={room.id}
+            messages={chat.messages}
+            sendMessage={chat.sendMessage}
+            sendError={chat.error}
             myPlayerInRoom={myPlayerInRoom}
             players={players}
-            supabase={supabase}
-            onClose={() => setChatOpen(false)}
+            onClose={() => chat.setIsChatOpen(false)}
           />
         )}
         <GlobalLeaderboard
@@ -167,15 +172,18 @@ export default function RoomPage() {
           onOpenSoundboard={() => setSoundboardOpen(true)}
           onOpenLeaderboard={() => setLeaderboardOpen(true)}
           onOpenProfile={() => setProfileOpen(true)}
-          onOpenChat={() => setChatOpen(true)}
+          onOpenChat={() => chat.setIsChatOpen(true)}
+          chatHasUnread={chat.hasUnread}
         />
-        {chatOpen && room && myPlayerInRoom && (
+        <FloatingChatBubbles bubbles={chat.floatingBubbles} />
+        {chat.isChatOpen && myPlayerInRoom && (
           <ChatOverlay
-            roomId={room.id}
+            messages={chat.messages}
+            sendMessage={chat.sendMessage}
+            sendError={chat.error}
             myPlayerInRoom={myPlayerInRoom}
             players={players}
-            supabase={supabase}
-            onClose={() => setChatOpen(false)}
+            onClose={() => chat.setIsChatOpen(false)}
           />
         )}
         <GlobalLeaderboard
@@ -226,15 +234,18 @@ export default function RoomPage() {
             onOpenSoundboard={() => setSoundboardOpen(true)}
             onOpenLeaderboard={() => setLeaderboardOpen(true)}
             onOpenProfile={() => setProfileOpen(true)}
-            onOpenChat={() => setChatOpen(true)}
+            onOpenChat={() => chat.setIsChatOpen(true)}
+            chatHasUnread={chat.hasUnread}
           />
-          {chatOpen && room && myPlayerInRoom && (
+          <FloatingChatBubbles bubbles={chat.floatingBubbles} />
+          {chat.isChatOpen && myPlayerInRoom && (
             <ChatOverlay
-              roomId={room.id}
+              messages={chat.messages}
+              sendMessage={chat.sendMessage}
+              sendError={chat.error}
               myPlayerInRoom={myPlayerInRoom}
               players={players}
-              supabase={supabase}
-              onClose={() => setChatOpen(false)}
+              onClose={() => chat.setIsChatOpen(false)}
             />
           )}
           <GlobalLeaderboard

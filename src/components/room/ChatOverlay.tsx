@@ -2,33 +2,31 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatMessageRow, PlayerRow } from "@/types/database";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
 import { Send, X } from "lucide-react";
 
 export interface ChatOverlayProps {
-  roomId: string;
+  messages: ChatMessageRow[];
+  sendMessage: (text: string) => Promise<{ error: string | null }>;
+  sendError: string | null;
   myPlayerInRoom: PlayerRow;
   players: PlayerRow[];
-  supabase: SupabaseClient<Database>;
   onClose: () => void;
 }
 
 /**
  * Semi-transparent chat overlay (glassmorphism) over the active screen.
- * Fetches messages on mount, subscribes to Realtime INSERT, supports sending.
+ * Consumes global chat state (messages, sendMessage) from useRoomChat.
  */
 export function ChatOverlay({
-  roomId,
+  messages,
+  sendMessage,
+  sendError,
   myPlayerInRoom,
   players,
-  supabase,
   onClose,
 }: ChatOverlayProps) {
-  const [messages, setMessages] = useState<ChatMessageRow[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -39,54 +37,6 @@ export function ChatOverlay({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  // Fetch existing messages on mount
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchMessages() {
-      const { data, error: fetchErr } = await supabase
-        .from("chat_messages")
-        .select("*")
-        .eq("room_id", roomId)
-        .order("created_at", { ascending: true });
-      if (cancelled) return;
-      if (fetchErr) {
-        setError("אופס, משהו השתבש. נסה שוב!");
-        return;
-      }
-      setMessages((data ?? []) as ChatMessageRow[]);
-    }
-    fetchMessages();
-    return () => {
-      cancelled = true;
-    };
-  }, [roomId, supabase]);
-
-  // Realtime: subscribe to INSERT on chat_messages for this room
-  useEffect(() => {
-    const channel = supabase
-      .channel(`chat_messages_${roomId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: `room_id=eq.${roomId}`,
-        },
-        (payload) => {
-          const row = payload.new as ChatMessageRow;
-          if (row?.room_id === roomId) {
-            setMessages((prev) => [...prev, row]);
-          }
-        }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [roomId, supabase]);
-
-  // Auto-scroll when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
@@ -95,20 +45,14 @@ export function ChatOverlay({
     e.preventDefault();
     const text = inputValue.trim();
     if (!text || sending) return;
-    setInputValue(""); // Clear immediately for snappy UX
+    setInputValue("");
     setSending(true);
-    setError(null);
-    const { error: insertErr } = await supabase.from("chat_messages").insert({
-      room_id: roomId,
-      player_id: myPlayerInRoom.id,
-      message: text,
-    });
+    const { error } = await sendMessage(text);
     setSending(false);
-    if (insertErr) {
-      setError("אופס, משהו השתבש. נסה שוב!");
-      setInputValue(text); // Restore on failure
-    }
+    if (error) setInputValue(text);
   };
+
+  const error = sendError;
 
   return (
     <div
@@ -117,7 +61,6 @@ export function ChatOverlay({
       lang="he"
       aria-label="צ'אט הקבוצה"
     >
-      {/* Backdrop: allow closing by click, but don't capture pointer for the overlay */}
       <div
         className="absolute inset-0 bg-black/20 pointer-events-auto"
         onClick={onClose}
@@ -127,7 +70,6 @@ export function ChatOverlay({
         className="w-full h-[70vh] bg-white/70 backdrop-blur-md border-t border-white/50 rounded-t-3xl shadow-2xl flex flex-col pointer-events-auto transition-transform duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex-none flex items-center justify-between px-4 py-3 border-b border-foreground/10">
           <h2 id="chat-title" className="text-lg font-bold text-foreground">
             צ'אט הקבוצה
@@ -142,7 +84,6 @@ export function ChatOverlay({
           </button>
         </div>
 
-        {/* Message list */}
         <div
           ref={scrollContainerRef}
           className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-3"
@@ -195,7 +136,6 @@ export function ChatOverlay({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input area */}
         <form
           onSubmit={handleSubmit}
           className="flex-none p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white/50 border-t border-foreground/10 flex gap-2 items-center"

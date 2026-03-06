@@ -42,3 +42,14 @@ body {
 [dir="rtl"] {
   text-align: right;
 }
+
+/* Soap bubble floating notification (chat) */
+@keyframes floatUpFade {
+  0% { opacity: 0; transform: translateY(30px) scale(0.8); }
+  10% { opacity: 1; transform: translateY(0) scale(1); }
+  70% { opacity: 1; transform: translateY(-40px) scale(1); }
+  100% { opacity: 0; transform: translateY(-80px) scale(0.9); }
+}
+.animate-float-bubble {
+  animation: floatUpFade 4s ease-in-out forwards;
+}
