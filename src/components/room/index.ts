@@ -21,3 +21,5 @@ export { VoiceRecorder } from "./VoiceRecorder";
 export type { VoiceRecorderProps } from "./VoiceRecorder";
 export { RoomNotFoundView } from "./RoomNotFoundView";
 export type { RoomNotFoundViewProps } from "./RoomNotFoundView";
+export { TopMenu } from "./TopMenu";
+export type { TopMenuProps } from "./TopMenu";

@@ -54,12 +54,14 @@ export function JoinModal({
       usePlayerStore.getState().setPlayerAvatar(playerAvatar);
       usePlayerStore.getState().setRoomId(room.id);
 
+      const playerSounds = usePlayerStore.getState().playerSounds ?? {};
       const { error } = await playersApi.upsert(supabase, {
         room_id: room.id,
         client_id: localPlayerId,
         name,
         avatar: playerAvatar,
         is_host: room.host_id === localPlayerId,
+        sounds: playerSounds,
       });
       if (error) throw error;
 

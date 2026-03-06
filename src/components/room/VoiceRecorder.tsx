@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { Mic, Loader2 } from "lucide-react";
 import { players as playersMutations } from "@/lib/supabase/typed-mutations";
+import { usePlayerStore } from "@/store/player-store";
 import type { PlayerSoundsMap } from "@/types/database";
 
 const MAX_RECORDING_MS = 5000;
@@ -91,6 +92,7 @@ export function VoiceRecorder({
         if (updateError) {
           setError("אופס, שמירה נכשלה. נסה שוב!");
         } else {
+          usePlayerStore.getState().setPlayerSounds(nextSounds);
           onUploaded();
         }
         setUploading(false);

@@ -19,14 +19,20 @@ function generatePlayerId(): string {
 export const AVATAR_OPTIONS = ["🐶", "🐱", "🐼", "🦊", "🐰", "🦁"] as const;
 export type AvatarOption = (typeof AVATAR_OPTIONS)[number];
 
+/** Persisted soundboard clip slot → public URL. Carried across rooms via localStorage. */
+export type PlayerSoundsMap = Record<string, string>;
+
 export interface PlayerState {
   playerId: string;
   playerName: string;
   playerAvatar: AvatarOption | string;
   roomId: string | null;
+  /** Soundboard slot → URL; persisted so clips carry across rooms. */
+  playerSounds: PlayerSoundsMap | null;
   setPlayerName: (name: string) => void;
   setPlayerAvatar: (avatar: AvatarOption | string) => void;
   setRoomId: (roomId: string | null) => void;
+  setPlayerSounds: (sounds: Record<string, string>) => void;
   /** Call when joining a room; optionally set name/avatar if not set */
   joinRoom: (roomId: string, name?: string, avatar?: AvatarOption | string) => void;
   leaveRoom: () => void;
@@ -41,10 +47,12 @@ export const usePlayerStore = create<PlayerState>()(
       playerName: "",
       playerAvatar: "",
       roomId: null,
+      playerSounds: {},
 
       setPlayerName: (name) => set({ playerName: name }),
       setPlayerAvatar: (avatar) => set({ playerAvatar: avatar }),
       setRoomId: (roomId) => set({ roomId }),
+      setPlayerSounds: (sounds) => set({ playerSounds: sounds }),
 
       joinRoom: (roomId, name, avatar) => {
         set((s) => ({
@@ -70,6 +78,7 @@ export const usePlayerStore = create<PlayerState>()(
         playerName: s.playerName,
         playerAvatar: s.playerAvatar,
         roomId: s.roomId,
+        playerSounds: s.playerSounds ?? {},
       }),
       // Hydration: ensure playerId exists after rehydrate
       onRehydrateStorage: () => (state) => {

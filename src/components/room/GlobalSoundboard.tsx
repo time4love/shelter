@@ -6,6 +6,7 @@ import type { Database } from "@/types/database";
 import { Megaphone, Play, Trash2, X } from "lucide-react";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { players as playersMutations } from "@/lib/supabase/typed-mutations";
+import { usePlayerStore } from "@/store/player-store";
 import type { PlayerSoundsMap } from "@/types/database";
 
 const SLOTS: (1 | 2 | 3)[] = [1, 2, 3];
@@ -34,7 +35,13 @@ export function GlobalSoundboard({
   open,
   onOpenChange,
 }: GlobalSoundboardProps) {
-  const sounds: PlayerSoundsMap | null = myPlayerInRoom?.sounds ?? null;
+  const playerSounds = usePlayerStore((s) => s.playerSounds ?? null);
+  const merged: PlayerSoundsMap = {
+    ...(playerSounds ?? {}),
+    ...(myPlayerInRoom?.sounds ?? {}),
+  };
+  const sounds: PlayerSoundsMap | null =
+    Object.keys(merged).length > 0 ? merged : null;
 
   const handlePlay = (url: string) => {
     broadcastSound(url);
@@ -48,7 +55,10 @@ export function GlobalSoundboard({
     const { error } = await playersMutations.update(supabase, myPlayerInRoom.id, {
       sounds: next,
     });
-    if (!error) await refetchMyPlayer();
+    if (!error) {
+      usePlayerStore.getState().setPlayerSounds(next);
+      await refetchMyPlayer();
+    }
   };
 
   if (!open) return null;
