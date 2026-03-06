@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import type { GameStateTOL, GameStateEretzIr } from "@/types/database";
+import type { GameStateTOL, GameStateEretzIr, GameStateBattleship } from "@/types/database";
 
 type RoomInsert = Database["public"]["Tables"]["rooms"]["Insert"];
 type RoomUpdate = Database["public"]["Tables"]["rooms"]["Update"];
@@ -36,7 +36,7 @@ export const rooms = {
     roomId: string,
     status: RoomUpdate["status"],
     currentGame: RoomUpdate["current_game"],
-    gameState?: GameStateTOL | GameStateEretzIr
+    gameState?: GameStateTOL | GameStateEretzIr | GameStateBattleship
   ) =>
     client
       .from("rooms")
@@ -50,7 +50,7 @@ export const rooms = {
   updateGameState: (
     client: SupabaseClient<Database>,
     roomId: string,
-    gameState: GameStateTOL | GameStateEretzIr
+    gameState: GameStateTOL | GameStateEretzIr | GameStateBattleship
   ) =>
     client.from("rooms").update({ game_state: gameState } as never).eq("id", roomId),
 
@@ -125,4 +125,21 @@ export const eretzIrAnswers = {
 
   fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
     client.from("eretz_ir_answers").select("*").eq("room_id", roomId),
+};
+
+type BattleshipSubInsert = Database["public"]["Tables"]["battleship_subs"]["Insert"];
+type BattleshipShotInsert = Database["public"]["Tables"]["battleship_shots"]["Insert"];
+
+export const battleshipSubs = {
+  insert: (client: SupabaseClient<Database>, row: BattleshipSubInsert) =>
+    client.from("battleship_subs").upsert(row as never, { onConflict: "room_id,player_id" }),
+  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
+    client.from("battleship_subs").select("*").eq("room_id", roomId),
+};
+
+export const battleshipShots = {
+  insert: (client: SupabaseClient<Database>, row: BattleshipShotInsert) =>
+    client.from("battleship_shots").insert(row as never),
+  fetchByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
+    client.from("battleship_shots").select("*").eq("room_id", roomId),
 };

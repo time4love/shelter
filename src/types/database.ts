@@ -12,7 +12,7 @@ export type Json =
 
 export type RoomStatus = "lobby" | "game_selection" | "playing" | "results";
 
-export type GameId = "truth_or_lie" | "the_imposter" | "eretz_ir";
+export type GameId = "truth_or_lie" | "the_imposter" | "eretz_ir" | "battleship";
 
 /** Truth or Lie: one statement entry in the statements array */
 export type TolStatementItem = { text: string; isTruth: boolean };
@@ -41,6 +41,17 @@ export type GameStateEretzIr =
 
 /** Eretz Ir: answers object - keys are category names, values are typed words */
 export type EretzIrAnswersMap = Record<string, string>;
+
+/** Room.game_state for Battleship (צוללות) */
+export type GameStateBattleship =
+  | { phase: "hiding"; gridSize: number }
+  | {
+      phase: "playing";
+      currentTurnId: string;
+      alivePlayers: string[];
+      gridSize: number;
+    }
+  | { phase: "round_results"; winnerId?: string | null };
 
 export interface Database {
   public: {
@@ -201,6 +212,58 @@ export interface Database {
           created_at?: string;
         };
       };
+      battleship_subs: {
+        Row: {
+          id: string;
+          room_id: string;
+          player_id: string;
+          cells: number[];
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          room_id: string;
+          player_id: string;
+          cells: number[];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          room_id?: string;
+          player_id?: string;
+          cells?: number[];
+          created_at?: string;
+        };
+      };
+      battleship_shots: {
+        Row: {
+          id: string;
+          room_id: string;
+          shooter_id: string;
+          cell_index: number;
+          result: "water" | "hit";
+          hit_player_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          room_id: string;
+          shooter_id: string;
+          cell_index: number;
+          result: "water" | "hit";
+          hit_player_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          room_id?: string;
+          shooter_id?: string;
+          cell_index?: number;
+          result?: "water" | "hit";
+          hit_player_id?: string | null;
+          created_at?: string;
+        };
+      };
     };
   };
 }
@@ -211,3 +274,5 @@ export type GameVoteRow = Database["public"]["Tables"]["game_votes"]["Row"];
 export type TolStatementRow = Database["public"]["Tables"]["tol_statements"]["Row"];
 export type TolGuessRow = Database["public"]["Tables"]["tol_guesses"]["Row"];
 export type EretzIrAnswerRow = Database["public"]["Tables"]["eretz_ir_answers"]["Row"];
+export type BattleshipSubRow = Database["public"]["Tables"]["battleship_subs"]["Row"];
+export type BattleshipShotRow = Database["public"]["Tables"]["battleship_shots"]["Row"];

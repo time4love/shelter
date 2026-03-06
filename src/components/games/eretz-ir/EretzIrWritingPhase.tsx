@@ -66,7 +66,7 @@ export function EretzIrWritingPhase({
   if (isWaiting) {
     return (
       <div
-        className="flex flex-col h-[100dvh] overflow-hidden bg-gray-50 items-center justify-center gap-4 px-6"
+        className="fixed inset-0 bg-gray-50 z-50 flex flex-col items-center justify-center gap-4 px-6"
         dir="rtl"
         lang="he"
       >
@@ -86,32 +86,30 @@ export function EretzIrWritingPhase({
 
   return (
     <div
-      className="flex flex-col h-[100dvh] overflow-hidden bg-gray-50"
+      className="fixed inset-0 bg-gray-50 z-50 flex flex-col"
       dir="rtl"
       lang="he"
     >
-      {/* Sticky header */}
-      <div className="flex-none p-4 bg-gray-50 border-b border-black/5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-center text-xl font-bold text-foreground">
-            האות: {letter}
-          </h2>
-          {isHost && (
-            <button
-              type="button"
-              onClick={handleHostStop}
-              className="rounded-xl bg-soft-pink px-4 py-2 font-bold text-white shadow-card active:scale-[0.98]"
-            >
-              עצור! עברו לתוצאות
-            </button>
-          )}
-        </div>
+      {/* Fixed header */}
+      <div className="flex-none bg-white shadow-sm px-4 py-3 flex items-center justify-between z-10">
+        <h2 className="text-xl font-bold text-foreground">
+          האות: {letter}
+        </h2>
+        {isHost && (
+          <button
+            type="button"
+            onClick={handleHostStop}
+            className="rounded-xl bg-soft-pink px-4 py-2 font-bold text-white shadow-card active:scale-[0.98]"
+          >
+            עצור!
+          </button>
+        )}
       </div>
 
-      {/* Flexible card area (middle) */}
-      <div className="flex-1 min-h-0 flex items-center justify-center p-4">
+      {/* Card container (flexible middle) */}
+      <div className="flex-1 overflow-hidden flex items-center justify-center p-4">
         <div
-          className={`max-h-full w-full max-w-md aspect-square md:aspect-auto p-6 flex flex-col items-center justify-center rounded-2xl shadow-card ${bgColor}`}
+          className={`w-full max-w-sm aspect-square flex flex-col items-center justify-center p-6 rounded-2xl shadow-card ${bgColor}`}
         >
           <h3 className="mb-3 text-center text-2xl font-bold text-foreground shrink-0">
             {category}
@@ -128,8 +126,8 @@ export function EretzIrWritingPhase({
         </div>
       </div>
 
-      {/* Sticky footer: nav buttons + progress rectangles */}
-      <div className="flex-none bg-white p-4 pb-[env(safe-area-inset-bottom)] border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+      {/* Fixed footer */}
+      <div className="flex-none bg-white border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-10">
         <div className="flex gap-3">
           <button
             type="button"

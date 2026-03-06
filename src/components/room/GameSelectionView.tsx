@@ -19,6 +19,7 @@ export interface GameSelectionViewProps {
 const GAMES: { id: GameId; label: string; icon: string }[] = [
   { id: "truth_or_lie", label: "אמת או שקר", icon: "🎭" },
   { id: "eretz_ir", label: "ארץ עיר", icon: "🌍" },
+  { id: "battleship", label: "צוללות", icon: "🚢" },
 ];
 
 export function GameSelectionView({
@@ -64,8 +65,17 @@ export function GameSelectionView({
   function getWinningGameId(): GameId {
     const truth = voteCount("truth_or_lie");
     const eretzIr = voteCount("eretz_ir");
-    if (eretzIr > truth) return "eretz_ir";
+    const battleship = voteCount("battleship");
+    const max = Math.max(truth, eretzIr, battleship);
+    if (battleship === max) return "battleship";
+    if (eretzIr === max) return "eretz_ir";
     return "truth_or_lie";
+  }
+
+  function battleshipGridSize(playerCount: number): number {
+    if (playerCount <= 3) return 5;
+    if (playerCount <= 5) return 6;
+    return 7;
   }
 
   async function handleHostStart() {
@@ -78,7 +88,9 @@ export function GameSelectionView({
           ? ({ phase: "writing" } as const)
           : winningGame === "eretz_ir"
             ? ({ phase: "rolling" } as const)
-            : undefined;
+            : winningGame === "battleship"
+              ? ({ phase: "hiding", gridSize: battleshipGridSize(players.length) } as const)
+              : undefined;
       const { error } = await roomsApi.updateStatusAndGame(
         supabase,
         room.id,
