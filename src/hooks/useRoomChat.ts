@@ -54,13 +54,14 @@ export function useRoomChat(
   // Initial fetch
   useEffect(() => {
     if (!roomId || !myPlayerId) return;
+    const id = roomId as string;
     let cancelled = false;
     const supabase = createBrowserClient();
     async function fetchMessages() {
       const { data, error: fetchErr } = await supabase
         .from("chat_messages")
         .select("*")
-        .eq("room_id", roomId)
+        .eq("room_id", id)
         .order("created_at", { ascending: true });
       if (cancelled) return;
       if (fetchErr) {
