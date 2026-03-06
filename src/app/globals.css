@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+/* ============================================
+   Shelter: Joyful theme + RTL support
+   ============================================ */
+
+:root {
+  --background: #fef7ee;
+  --foreground: #2d2a26;
+  /* Joyful palette */
+  --playful-yellow: #ffd93d;
+  --soft-pink: #ff9f9f;
+  --sky-blue: #6bcbff;
+  --mint-green: #6bcf7f;
+  --warm-orange: #ffb347;
+  --lavender: #c9b1ff;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-playful-yellow: var(--playful-yellow);
+  --color-soft-pink: var(--soft-pink);
+  --color-sky-blue: var(--sky-blue);
+  --color-mint-green: var(--mint-green);
+  --color-warm-orange: var(--warm-orange);
+  --color-lavender: var(--lavender);
+  --font-sans: var(--font-heebo), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  /* RTL: ensure direction is set (layout has dir="rtl" on html) */
+}
+
+/* RTL-aware utilities (Tailwind's rtl: works with dir="rtl") */
+[dir="rtl"] {
+  text-align: right;
+}
