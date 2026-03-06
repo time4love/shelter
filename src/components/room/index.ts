@@ -8,6 +8,7 @@ export { GameSelectionView } from "./GameSelectionView";
 export type { GameSelectionViewProps } from "./GameSelectionView";
 export { GameEngine } from "./GameEngine";
 export type { GameEngineProps } from "./GameEngine";
+export { AudioUnlockBanner } from "./AudioUnlockBanner";
 export { GlobalLeaderboard } from "./GlobalLeaderboard";
 export type { GlobalLeaderboardProps } from "./GlobalLeaderboard";
 export { GlobalSoundboard } from "./GlobalSoundboard";

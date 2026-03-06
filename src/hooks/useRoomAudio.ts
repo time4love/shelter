@@ -2,17 +2,22 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { createBrowserClient } from "@/lib/supabase/client";
+import { useAudioUnlockStore } from "@/store/audio-unlock-store";
 
 /**
- * Plays an audio URL (handles browser autoplay policy).
+ * Plays an audio URL. On NotAllowedError (autoplay blocked), sets global audioBlocked so the unlock banner is shown.
  */
-function playAudioUrl(url: string): void {
+export function playAudioUrl(url: string): void {
   try {
     const audio = new Audio(url);
     const played = audio.play();
     if (typeof played?.catch === "function") {
-      played.catch(() => {
-        // Autoplay blocked or failed – ignore (e.g. user hasn't interacted yet)
+      played.catch((err: unknown) => {
+        const isBlocked =
+          err instanceof Error && (err.name === "NotAllowedError" || err.name === "NotAllowed");
+        if (isBlocked) {
+          useAudioUnlockStore.getState().setAudioBlocked(true);
+        }
       });
     }
   } catch {
@@ -20,18 +25,39 @@ function playAudioUrl(url: string): void {
   }
 }
 
+/** Minimal silent WAV (data URL) to unlock audio context on user gesture. */
+const SILENT_AUDIO_DATA_URL =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+
 /**
- * Subscribes to room audio broadcast and exposes broadcastSound.
- * When a "play_sound" event is received, plays the audio on this device.
- * Mount once per room (e.g. in RoomPage) so it's active during lobby and all games.
+ * Play a silent clip to unlock the browser audio context (call from a user gesture).
+ */
+export function unlockAudioContext(): void {
+  try {
+    const audio = new Audio(SILENT_AUDIO_DATA_URL);
+    audio.play().then(() => {
+      useAudioUnlockStore.getState().setAudioBlocked(false);
+    }).catch(() => {
+      // Still clear so user can try again
+      useAudioUnlockStore.getState().setAudioBlocked(false);
+    });
+  } catch {
+    useAudioUnlockStore.getState().setAudioBlocked(false);
+  }
+}
+
+/**
+ * Subscribes to room_${roomId} for audio broadcast: receives play_sound and plays; exposes broadcastSound and playSound.
+ * Mount at highest level in the room page.
  */
 export function useRoomAudio(roomId: string | null) {
   const channelRef = useRef<ReturnType<ReturnType<typeof createBrowserClient>["channel"]> | null>(null);
 
   const broadcastSound = useCallback(
     (url: string) => {
-      if (!roomId || !channelRef.current) return;
-      channelRef.current.send({
+      const ch = channelRef.current;
+      if (!roomId || !ch) return;
+      ch.send({
         type: "broadcast",
         event: "play_sound",
         payload: { url },
@@ -40,7 +66,6 @@ export function useRoomAudio(roomId: string | null) {
     [roomId]
   );
 
-  /** Play a sound on this device only (e.g. when current user taps Play). */
   const playSound = useCallback((url: string) => {
     playAudioUrl(url);
   }, []);
@@ -49,15 +74,24 @@ export function useRoomAudio(roomId: string | null) {
     if (!roomId) return;
 
     const supabase = createBrowserClient();
-    const channel = supabase.channel(`room_audio_${roomId}`);
+    const channel = supabase.channel(`room_${roomId}`);
 
     channel.on("broadcast", { event: "play_sound" }, (payload) => {
       const url = (payload.payload as { url?: string })?.url;
-      if (typeof url === "string" && url) playAudioUrl(url);
+      if (typeof url !== "string" || !url) return;
+      const audio = new Audio(url);
+      audio.play().catch((err: unknown) => {
+        const isBlocked =
+          err instanceof Error && (err.name === "NotAllowedError" || err.name === "NotAllowed");
+        if (isBlocked) {
+          useAudioUnlockStore.getState().setAudioBlocked(true);
+        }
+      });
     });
 
-    channel.subscribe();
-    channelRef.current = channel;
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") channelRef.current = channel;
+    });
 
     return () => {
       channelRef.current = null;

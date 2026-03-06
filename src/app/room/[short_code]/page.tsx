@@ -7,7 +7,7 @@ import { usePlayerStore } from "@/store/player-store";
 import { useEnsurePlayerId } from "@/hooks/useEnsurePlayerId";
 import { useRoomAndJoinStatus } from "@/hooks/useRoomAndJoinStatus";
 import { useLobbyPlayers } from "@/hooks/useLobbyPlayers";
-import { GameEngine, GameSelectionView, GlobalLeaderboard, GlobalSoundboard, JoinModal, LobbyView, RoomNotFoundView } from "@/components/room";
+import { AudioUnlockBanner, GameEngine, GameSelectionView, GlobalLeaderboard, GlobalSoundboard, JoinModal, LobbyView, RoomNotFoundView } from "@/components/room";
 import { useRoomAudio } from "@/hooks/useRoomAudio";
 
 /**
@@ -89,6 +89,7 @@ export default function RoomPage() {
   if (room.status === "game_selection" && myPlayerInRoom) {
     return (
       <div className="min-h-screen w-full flex flex-col pb-24 bg-gray-50">
+        <AudioUnlockBanner />
         <GameSelectionView
           room={room}
           players={players}
@@ -111,6 +112,7 @@ export default function RoomPage() {
   if (room.status === "playing" && myPlayerInRoom) {
     return (
       <div className="min-h-screen w-full flex flex-col pb-24 bg-gray-50">
+        <AudioUnlockBanner />
         <GameEngine
           room={room}
           players={players}
@@ -132,6 +134,7 @@ export default function RoomPage() {
 
   return (
     <div className="min-h-screen w-full flex flex-col pb-24 bg-gray-50">
+      <AudioUnlockBanner />
       <LobbyView
         shortCode={shortCode}
         room={room}
