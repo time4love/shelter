@@ -131,7 +131,7 @@ export function useRoomChat(
         player_id: myPlayerId,
         message: text.trim(),
       };
-      const { error: insertErr } = await supabase.from("chat_messages").insert(insertRow);
+      const { error: insertErr } = await supabase.from("chat_messages").insert(insertRow as never);
       if (insertErr) {
         setError("אופס, משהו השתבש. נסה שוב!");
         return { error: "אופס, משהו השתבש. נסה שוב!" };
