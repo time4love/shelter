@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { RoomRow, PlayerRow } from "@/types/database";
 import type { GameStateTOL } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -35,7 +35,7 @@ export function TolPlayingPhase({
     gameState.phase === "playing"
   );
   const [guessedIndex, setGuessedIndex] = useState<number | null>(null);
-  const [revealing, setRevealing] = useState(false);
+  const hasTriggeredReveal = useRef(false);
 
   const authorStatements = allStatements.find((s) => s.player_id === currentAuthorId);
   const authorPlayer = players.find((p) => p.id === currentAuthorId);
@@ -67,10 +67,12 @@ export function TolPlayingPhase({
     });
   };
 
-  const handleRevealResults = async () => {
-    if (!isHost || !allGuessed || revealing || truthDisplayIndex < 0) return;
-    setRevealing(true);
-    try {
+  // Auto-transition to revealing_answers when everyone (except author) has guessed. Host only.
+  useEffect(() => {
+    if (!isHost || !allGuessed || truthDisplayIndex < 0 || hasTriggeredReveal.current) return;
+    hasTriggeredReveal.current = true;
+
+    const run = async () => {
       const scoreDeltas: Record<string, number> = {};
       players.forEach((p) => {
         scoreDeltas[p.id] = p.score;
@@ -89,22 +91,19 @@ export function TolPlayingPhase({
           return supabase.from("players").update({ score: newScore }).eq("id", p.id);
         })
       );
-      if (authorsLeft.length === 0) {
-        await roomsApi.updateGameState(supabase, room.id, { phase: "round_results" });
-      } else {
-        const [nextAuthor, ...rest] = authorsLeft;
-        await roomsApi.updateGameState(supabase, room.id, {
-          phase: "playing",
-          currentAuthorId: nextAuthor,
-          authorsLeft: rest,
-        });
-      }
-    } catch {
-      // show error in UI if needed
-    } finally {
-      setRevealing(false);
-    }
-  };
+      await roomsApi.updateGameState(supabase, room.id, {
+        phase: "revealing_answers",
+        currentAuthorId,
+        authorsLeft,
+      });
+    };
+    run();
+  }, [isHost, allGuessed, truthDisplayIndex, currentAuthorId, authorsLeft, room.id, players, guesses, supabase]);
+
+  // Reset trigger ref when author changes so next round can auto-reveal
+  useEffect(() => {
+    hasTriggeredReveal.current = false;
+  }, [currentAuthorId]);
 
   if (!authorStatements || shuffled.length !== 4) {
     return (
@@ -130,15 +129,8 @@ export function TolPlayingPhase({
             </li>
           ))}
         </ul>
-        {isHost && allGuessed && (
-          <button
-            type="button"
-            onClick={handleRevealResults}
-            disabled={revealing}
-            className="w-full py-4 rounded-2xl bg-mint-green text-white font-bold text-xl shadow-card hover:opacity-95 active:scale-[0.98] disabled:opacity-60"
-          >
-            {revealing ? "מחשב..." : "חשוף תוצאות"}
-          </button>
+        {allGuessed && (
+          <p className="text-center text-foreground/80">כולם ניחשו! התוצאות יוצגו בקרוב...</p>
         )}
       </div>
     );
@@ -147,7 +139,14 @@ export function TolPlayingPhase({
   return (
     <div className="max-w-md mx-auto p-6 flex flex-col gap-6" dir="rtl" lang="he">
       <h2 className="text-2xl font-bold text-foreground text-center">
-        איזה משפט אמת? (של {authorPlayer?.name ?? "..."})
+        איזה משפט אמת? (המשפטים של{" "}
+        <span className="inline-flex items-center gap-2">
+          <span className="text-3xl" aria-hidden>
+            {authorPlayer?.avatar ?? "👤"}
+          </span>
+          <span>{authorPlayer?.name ?? "..."}</span>
+        </span>
+        )
       </h2>
       {hasGuessed || guessedIndex !== null ? (
         <p className="text-center text-foreground/80">המתן לתוצאות...</p>
@@ -164,16 +163,6 @@ export function TolPlayingPhase({
             </button>
           ))}
         </div>
-      )}
-      {isHost && allGuessed && (
-        <button
-          type="button"
-          onClick={handleRevealResults}
-          disabled={revealing}
-          className="w-full py-4 rounded-2xl bg-mint-green text-white font-bold text-xl shadow-card hover:opacity-95 active:scale-[0.98] disabled:opacity-60"
-        >
-          {revealing ? "מחשב..." : "חשוף תוצאות"}
-        </button>
       )}
     </div>
   );

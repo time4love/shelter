@@ -7,7 +7,7 @@ import { usePlayerStore } from "@/store/player-store";
 import { useEnsurePlayerId } from "@/hooks/useEnsurePlayerId";
 import { useRoomAndJoinStatus } from "@/hooks/useRoomAndJoinStatus";
 import { useLobbyPlayers } from "@/hooks/useLobbyPlayers";
-import { GameEngine, GameSelectionView, JoinModal, LobbyView, RoomNotFoundView } from "@/components/room";
+import { GameEngine, GameSelectionView, GlobalLeaderboard, JoinModal, LobbyView, RoomNotFoundView } from "@/components/room";
 
 /**
  * Room page – strict flow:
@@ -86,35 +86,44 @@ export default function RoomPage() {
 
   if (room.status === "game_selection" && myPlayerInRoom) {
     return (
-      <GameSelectionView
-        room={room}
-        players={players}
-        isHost={isHost}
-        myPlayerInRoom={myPlayerInRoom}
-        supabase={supabase}
-      />
+      <>
+        <GameSelectionView
+          room={room}
+          players={players}
+          isHost={isHost}
+          myPlayerInRoom={myPlayerInRoom}
+          supabase={supabase}
+        />
+        <GlobalLeaderboard players={players} />
+      </>
     );
   }
 
   if (room.status === "playing" && myPlayerInRoom) {
     return (
-      <GameEngine
-        room={room}
-        players={players}
-        myPlayerInRoom={myPlayerInRoom}
-        isHost={isHost}
-        supabase={supabase}
-      />
+      <>
+        <GameEngine
+          room={room}
+          players={players}
+          myPlayerInRoom={myPlayerInRoom}
+          isHost={isHost}
+          supabase={supabase}
+        />
+        <GlobalLeaderboard players={players} />
+      </>
     );
   }
 
   return (
-    <LobbyView
-      shortCode={shortCode}
-      room={room}
-      players={players}
-      isHost={isHost}
-      supabase={supabase}
-    />
+    <>
+      <LobbyView
+        shortCode={shortCode}
+        room={room}
+        players={players}
+        isHost={isHost}
+        supabase={supabase}
+      />
+      <GlobalLeaderboard players={players} />
+    </>
   );
 }

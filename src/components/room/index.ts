@@ -8,5 +8,7 @@ export { GameSelectionView } from "./GameSelectionView";
 export type { GameSelectionViewProps } from "./GameSelectionView";
 export { GameEngine } from "./GameEngine";
 export type { GameEngineProps } from "./GameEngine";
+export { GlobalLeaderboard } from "./GlobalLeaderboard";
+export type { GlobalLeaderboardProps } from "./GlobalLeaderboard";
 export { RoomNotFoundView } from "./RoomNotFoundView";
 export type { RoomNotFoundViewProps } from "./RoomNotFoundView";

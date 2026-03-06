@@ -25,6 +25,11 @@ export type GameStateTOL =
       currentAuthorId: string;
       authorsLeft: string[];
     }
+  | {
+      phase: "revealing_answers";
+      currentAuthorId: string;
+      authorsLeft: string[];
+    }
   | { phase: "round_results" };
 
 export interface Database {

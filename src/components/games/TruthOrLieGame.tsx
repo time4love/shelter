@@ -7,6 +7,7 @@ import type { Database } from "@/types/database";
 import { rooms as roomsApi } from "@/lib/supabase/typed-mutations";
 import { TolWritingPhase } from "@/components/games/tol/TolWritingPhase";
 import { TolPlayingPhase } from "@/components/games/tol/TolPlayingPhase";
+import { TolRevealView } from "@/components/games/tol/TolRevealView";
 import { TolRoundResults } from "@/components/games/tol/TolRoundResults";
 
 export interface TruthOrLieGameProps {
@@ -29,6 +30,17 @@ function parseGameState(room: RoomRow): GameStateTOL | null {
   ) {
     return {
       phase: "playing",
+      currentAuthorId: o.currentAuthorId,
+      authorsLeft: o.authorsLeft as string[],
+    };
+  }
+  if (
+    o.phase === "revealing_answers" &&
+    typeof o.currentAuthorId === "string" &&
+    Array.isArray(o.authorsLeft)
+  ) {
+    return {
+      phase: "revealing_answers",
       currentAuthorId: o.currentAuthorId,
       authorsLeft: o.authorsLeft as string[],
     };
@@ -79,6 +91,17 @@ export function TruthOrLieGame({
 
       {gameState.phase === "playing" && (
         <TolPlayingPhase
+          room={room}
+          players={players}
+          myPlayerInRoom={myPlayerInRoom}
+          isHost={isHost}
+          supabase={supabase}
+          gameState={gameState}
+        />
+      )}
+
+      {gameState.phase === "revealing_answers" && (
+        <TolRevealView
           room={room}
           players={players}
           myPlayerInRoom={myPlayerInRoom}
