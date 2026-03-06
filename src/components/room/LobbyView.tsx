@@ -57,7 +57,7 @@ export function LobbyView({
     <div className="flex flex-col w-full bg-gradient-to-b from-soft-pink/20 via-background to-sky-blue/20">
       <div className="p-4">
         <h1 className="text-3xl font-bold text-foreground text-center mt-4 mb-2">
-          מחכים לחברים...
+          {isHost ? "מחכים לחברים..." : "ממתינים שכולם יצטרפו"}
         </h1>
         <p className="text-foreground/70 text-center mb-6">חדר: {shortCode}</p>
 
