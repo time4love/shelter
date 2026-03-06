@@ -8,8 +8,7 @@ import type { Database } from "@/types/database";
 import { rooms as roomsApi } from "@/lib/supabase/typed-mutations";
 import { EretzIrRollingPhase } from "@/components/games/eretz-ir/EretzIrRollingPhase";
 import { EretzIrWritingPhase } from "@/components/games/eretz-ir/EretzIrWritingPhase";
-import { EretzIrRevealingPhase } from "@/components/games/eretz-ir/EretzIrRevealingPhase";
-import { EretzIrRoundResults } from "@/components/games/eretz-ir/EretzIrRoundResults";
+import { EretzIrAsyncResults } from "@/components/games/eretz-ir/EretzIrAsyncResults";
 
 export interface EretzIrGameProps {
   room: RoomRow;
@@ -28,10 +27,9 @@ function parseGameState(room: RoomRow): GameStateEretzIr | null {
   if (o.phase === "writing" && typeof o.letter === "string") {
     return { phase: "writing", letter: o.letter, roundId };
   }
-  if (o.phase === "revealing" && typeof o.currentCategoryIndex === "number") {
-    return { phase: "revealing", currentCategoryIndex: o.currentCategoryIndex, roundId };
+  if (o.phase === "async_results" && Array.isArray(o.readyPlayers)) {
+    return { phase: "async_results", readyPlayers: o.readyPlayers, roundId };
   }
-  if (o.phase === "round_results") return { phase: "round_results", roundId };
   return null;
 }
 
@@ -84,22 +82,14 @@ export function EretzIrGame({
           />
         )}
 
-        {state.phase === "revealing" && (
-          <EretzIrRevealingPhase
+        {state.phase === "async_results" && (
+          <EretzIrAsyncResults
             room={room}
             players={players}
+            myPlayerInRoom={myPlayerInRoom}
             isHost={isHost}
-            currentCategoryIndex={state.currentCategoryIndex}
             roundId={state.roundId}
-            supabase={supabase}
-          />
-        )}
-
-        {state.phase === "round_results" && (
-          <EretzIrRoundResults
-            room={room}
-            players={players}
-            isHost={isHost}
+            readyPlayers={state.readyPlayers}
             supabase={supabase}
           />
         )}

@@ -5,8 +5,9 @@ import type { RoomRow, PlayerRow, EretzIrAnswerRow } from "@/types/database";
 import type { EretzIrAnswersMap } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import { rooms as roomsApi, eretzIrAnswers as eretzIrAnswersApi } from "@/lib/supabase/typed-mutations";
+import { rooms as roomsApi, eretzIrAnswers as eretzIrAnswersApi, players as playersApi } from "@/lib/supabase/typed-mutations";
 import { CATEGORIES, CATEGORY_COLORS } from "./constants";
+import { computeTotalScoresForRound } from "./scoring";
 
 export interface EretzIrWritingPhaseProps {
   room: RoomRow;
@@ -80,7 +81,7 @@ export function EretzIrWritingPhase({
     };
   }, [room.id, roundId, supabase]);
 
-  // Auto-advance to revealing when all players in the room have submitted (host triggers)
+  // Host only: when all submitted → score round, bulk update players, then async_results
   useEffect(() => {
     if (
       !roundId ||
@@ -93,21 +94,25 @@ export function EretzIrWritingPhase({
     const allSubmitted = players.every((p) => submittedPlayerIds.includes(p.id));
     if (!allSubmitted) return;
     hasAutoAdvanced.current = true;
-    const nextState = {
-      phase: "revealing" as const,
-      currentCategoryIndex: 0,
-      roundId,
-    };
-    roomsApi
-      .updateGameState(supabase, room.id, nextState)
-      .then((res) => {
-        if (res?.error) {
-          hasAutoAdvanced.current = false;
+    (async () => {
+      try {
+        const { data } = await eretzIrAnswersApi.fetchByRoomId(supabase, room.id, roundId);
+        const rows = (data ?? []) as EretzIrAnswerRow[];
+        const roundScores = computeTotalScoresForRound(rows);
+        for (const p of players) {
+          const add = roundScores.get(p.id) ?? 0;
+          const newScore = (p.score ?? 0) + add;
+          await playersApi.update(supabase, p.id, { score: newScore });
         }
-      })
-      .catch(() => {
+        await roomsApi.updateGameState(supabase, room.id, {
+          phase: "async_results",
+          readyPlayers: [],
+          roundId,
+        });
+      } catch {
         hasAutoAdvanced.current = false;
-      });
+      }
+    })();
   }, [room.id, roundId, isHost, players, submittedPlayerIds, supabase]);
 
   const handleSubmit = async () => {
@@ -129,14 +134,6 @@ export function EretzIrWritingPhase({
       setSubmitError("אופס, משהו השתבש. נסה שוב!");
     }
   };
-
-  async function handleHostStop() {
-    await roomsApi.updateGameState(supabase, room.id, {
-      phase: "revealing",
-      currentCategoryIndex: 0,
-      roundId,
-    });
-  }
 
   if (isWaiting) {
     const allDone = players.length > 0 && submittedPlayerIds.length >= players.length;
@@ -164,15 +161,6 @@ export function EretzIrWritingPhase({
             )}
           </ul>
         </div>
-        {isHost && !allDone && (
-          <button
-            type="button"
-            onClick={handleHostStop}
-            className="rounded-2xl bg-soft-pink px-6 py-3 font-bold text-white shadow-card active:scale-[0.98]"
-          >
-            עצור! עברו לתוצאות
-          </button>
-        )}
       </div>
     );
   }
@@ -184,19 +172,10 @@ export function EretzIrWritingPhase({
       lang="he"
     >
       {/* Header */}
-      <div className="bg-white shadow-sm px-4 py-3 flex items-center justify-between rounded-2xl">
+      <div className="bg-white shadow-sm px-4 py-3 rounded-2xl">
         <h2 className="text-xl font-bold text-foreground">
           האות: {letter}
         </h2>
-        {isHost && (
-          <button
-            type="button"
-            onClick={handleHostStop}
-            className="rounded-xl bg-soft-pink px-4 py-2 font-bold text-white shadow-card active:scale-[0.98]"
-          >
-            עצור!
-          </button>
-        )}
       </div>
 
       {/* Card container */}

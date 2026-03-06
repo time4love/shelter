@@ -36,8 +36,7 @@ export type GameStateTOL =
 export type GameStateEretzIr =
   | { phase: "rolling"; roundId?: string }
   | { phase: "writing"; letter: string; roundId?: string }
-  | { phase: "revealing"; currentCategoryIndex: number; roundId?: string }
-  | { phase: "round_results"; roundId?: string };
+  | { phase: "async_results"; readyPlayers: string[]; roundId?: string };
 
 /** Eretz Ir: answers object - keys are category names, values are typed words */
 export type EretzIrAnswersMap = Record<string, string>;
