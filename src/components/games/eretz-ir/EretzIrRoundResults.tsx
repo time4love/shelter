@@ -41,39 +41,43 @@ export function EretzIrRoundResults({
   };
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6 p-6" dir="rtl" lang="he">
-      <h2 className="text-center text-2xl font-bold text-foreground">תוצאות הסיבוב</h2>
-      {error && (
-        <p className="text-center font-medium text-soft-pink" role="alert">
-          {error}
-        </p>
-      )}
-      <ul className="flex flex-col gap-3">
-        {sortedByScore.map((p, i) => (
-          <li
-            key={p.id}
-            className="flex items-center gap-4 rounded-2xl bg-white/90 px-4 py-3 shadow-soft"
-          >
-            <span className="text-2xl" aria-hidden>
-              {p.avatar}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-bold text-foreground">{p.name}</p>
-              <p className="text-sm text-foreground/70">{p.score} נקודות</p>
-            </div>
-            <span className="text-xl font-bold text-playful-yellow">#{i + 1}</span>
-          </li>
-        ))}
-      </ul>
+    <div className="flex flex-col w-full max-w-md mx-auto" dir="rtl" lang="he">
+      <div className="p-4">
+        <h2 className="text-center text-2xl font-bold text-foreground">תוצאות הסיבוב</h2>
+        {error && (
+          <p className="text-center font-medium text-soft-pink mt-2" role="alert">
+            {error}
+          </p>
+        )}
+        <ul className="flex flex-col gap-3 mt-6">
+          {sortedByScore.map((p, i) => (
+            <li
+              key={p.id}
+              className="flex items-center gap-4 rounded-2xl bg-white/90 px-4 py-3 shadow-soft"
+            >
+              <span className="text-2xl" aria-hidden>
+                {p.avatar}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-bold text-foreground">{p.name}</p>
+                <p className="text-sm text-foreground/70">{p.score} נקודות</p>
+              </div>
+              <span className="text-xl font-bold text-playful-yellow">#{i + 1}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
       {isHost && (
-        <button
-          type="button"
-          onClick={handleBackToSelection}
-          disabled={loading}
-          className="w-full rounded-2xl bg-mint-green py-4 text-xl font-bold text-white shadow-card hover:opacity-95 active:scale-[0.98] disabled:opacity-60"
-        >
-          {loading ? "מעביר..." : "חזור לבחירת משחקים"}
-        </button>
+        <div className="bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t shadow-md rounded-t-2xl">
+          <button
+            type="button"
+            onClick={handleBackToSelection}
+            disabled={loading}
+            className="w-full rounded-2xl bg-mint-green py-4 text-xl font-bold text-white shadow-card hover:opacity-95 active:scale-[0.98] disabled:opacity-60"
+          >
+            {loading ? "מעביר..." : "חזור לבחירת משחקים"}
+          </button>
+        </div>
       )}
     </div>
   );

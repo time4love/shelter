@@ -4,7 +4,13 @@
 -- Run in Supabase SQL Editor after schema.sql and game-votes (with eretz_ir)
 -- ============================================
 
--- 0. Allow 'battleship' in game_votes.game_id (if constraint exists)
+-- 0. Allow 'battleship' in rooms.current_game and game_votes.game_id
+ALTER TABLE public.rooms
+  DROP CONSTRAINT IF EXISTS rooms_current_game_check;
+ALTER TABLE public.rooms
+  ADD CONSTRAINT rooms_current_game_check
+  CHECK (current_game IS NULL OR current_game IN ('truth_or_lie', 'the_imposter', 'eretz_ir', 'battleship'));
+
 ALTER TABLE public.game_votes
   DROP CONSTRAINT IF EXISTS game_votes_game_id_check;
 ALTER TABLE public.game_votes

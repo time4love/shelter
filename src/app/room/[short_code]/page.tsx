@@ -86,7 +86,7 @@ export default function RoomPage() {
 
   if (room.status === "game_selection" && myPlayerInRoom) {
     return (
-      <>
+      <div className="min-h-screen w-full flex flex-col pb-24 bg-gray-50">
         <GameSelectionView
           room={room}
           players={players}
@@ -95,13 +95,13 @@ export default function RoomPage() {
           supabase={supabase}
         />
         <GlobalLeaderboard players={players} />
-      </>
+      </div>
     );
   }
 
   if (room.status === "playing" && myPlayerInRoom) {
     return (
-      <>
+      <div className="min-h-screen w-full flex flex-col pb-24 bg-gray-50">
         <GameEngine
           room={room}
           players={players}
@@ -110,12 +110,12 @@ export default function RoomPage() {
           supabase={supabase}
         />
         <GlobalLeaderboard players={players} />
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="min-h-screen w-full flex flex-col pb-24 bg-gray-50">
       <LobbyView
         shortCode={shortCode}
         room={room}
@@ -124,6 +124,6 @@ export default function RoomPage() {
         supabase={supabase}
       />
       <GlobalLeaderboard players={players} />
-    </>
+    </div>
   );
 }

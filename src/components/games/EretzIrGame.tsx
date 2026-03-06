@@ -52,51 +52,53 @@ export function EretzIrGame({
 
   return (
     <div
-      className="flex min-h-screen flex-col bg-gradient-to-b from-soft-pink/20 via-background to-sky-blue/20 pt-6 pb-12"
+      className="flex flex-col w-full bg-gradient-to-b from-soft-pink/20 via-background to-sky-blue/20"
       dir="rtl"
       lang="he"
     >
-      <h1 className="mb-2 px-4 text-center text-2xl font-bold text-foreground">
-        ארץ עיר 🌍
-      </h1>
+      <div className="p-4">
+        <h1 className="mb-2 px-4 text-center text-2xl font-bold text-foreground">
+          ארץ עיר 🌍
+        </h1>
 
-      {state.phase === "rolling" && (
-        <EretzIrRollingPhase
-          roomId={room.id}
-          isHost={isHost}
-          supabase={supabase}
-        />
-      )}
+        {state.phase === "rolling" && (
+          <EretzIrRollingPhase
+            roomId={room.id}
+            isHost={isHost}
+            supabase={supabase}
+          />
+        )}
 
-      {state.phase === "writing" && (
-        <EretzIrWritingPhase
-          room={room}
-          players={players}
-          myPlayerInRoom={myPlayerInRoom}
-          isHost={isHost}
-          letter={state.letter}
-          supabase={supabase}
-        />
-      )}
+        {state.phase === "writing" && (
+          <EretzIrWritingPhase
+            room={room}
+            players={players}
+            myPlayerInRoom={myPlayerInRoom}
+            isHost={isHost}
+            letter={state.letter}
+            supabase={supabase}
+          />
+        )}
 
-      {state.phase === "revealing" && (
-        <EretzIrRevealingPhase
-          room={room}
-          players={players}
-          isHost={isHost}
-          currentCategoryIndex={state.currentCategoryIndex}
-          supabase={supabase}
-        />
-      )}
+        {state.phase === "revealing" && (
+          <EretzIrRevealingPhase
+            room={room}
+            players={players}
+            isHost={isHost}
+            currentCategoryIndex={state.currentCategoryIndex}
+            supabase={supabase}
+          />
+        )}
 
-      {state.phase === "round_results" && (
-        <EretzIrRoundResults
-          room={room}
-          players={players}
-          isHost={isHost}
-          supabase={supabase}
-        />
-      )}
+        {state.phase === "round_results" && (
+          <EretzIrRoundResults
+            room={room}
+            players={players}
+            isHost={isHost}
+            supabase={supabase}
+          />
+        )}
+      </div>
     </div>
   );
 }

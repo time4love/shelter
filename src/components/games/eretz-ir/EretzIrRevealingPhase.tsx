@@ -113,67 +113,71 @@ export function EretzIrRevealingPhase({
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center p-6" dir="rtl" lang="he">
+      <div className="flex items-center justify-center p-6" dir="rtl" lang="he">
         <p className="text-foreground/80">טוען תוצאות...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 px-4 pb-8" dir="rtl" lang="he">
-      <h2 className="text-center text-xl font-bold text-foreground">
-        תוצאות הקטגוריה: {category}
-      </h2>
+    <div className="flex flex-col w-full" dir="rtl" lang="he">
+      <div className="p-4">
+        <h2 className="text-center text-xl font-bold text-foreground">
+          תוצאות הקטגוריה: {category}
+        </h2>
 
-      {error && (
-        <p className="text-center text-soft-pink font-medium" role="alert">
-          {error}
-        </p>
-      )}
+        {error && (
+          <p className="text-center text-soft-pink font-medium mt-2" role="alert">
+            {error}
+          </p>
+        )}
 
-      <ul className="flex flex-col gap-3">
-        {players.map((player) => {
-          const row = answers.find((a) => a.player_id === player.id);
-          const word = (row?.answers[category] ?? "").trim() || "לא כתב/ה";
-          const pts = categoryScores.get(player.id) ?? 0;
-          const ptsLabel = pts === 0 ? "+0" : pts === 10 ? "+10" : "+5";
-          return (
-            <li
-              key={player.id}
-              className="flex items-center gap-4 rounded-2xl bg-white/90 px-4 py-3 shadow-soft"
-            >
-              <span className="text-2xl" aria-hidden>
-                {player.avatar}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-bold text-foreground truncate">{player.name}</p>
-                <p className="text-foreground/80 truncate">{word}</p>
-              </div>
-              <span
-                className={`text-lg font-bold ${
-                  pts === 10 ? "text-green-600" : pts === 5 ? "text-amber-600" : "text-foreground/60"
-                }`}
+        <ul className="flex flex-col gap-3 mt-4">
+          {players.map((player) => {
+            const row = answers.find((a) => a.player_id === player.id);
+            const word = (row?.answers[category] ?? "").trim() || "לא כתב/ה";
+            const pts = categoryScores.get(player.id) ?? 0;
+            const ptsLabel = pts === 0 ? "+0" : pts === 10 ? "+10" : "+5";
+            return (
+              <li
+                key={player.id}
+                className="flex items-center gap-4 rounded-2xl bg-white/90 px-4 py-3 shadow-soft"
               >
-                {ptsLabel}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
+                <span className="text-2xl" aria-hidden>
+                  {player.avatar}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-foreground truncate">{player.name}</p>
+                  <p className="text-foreground/80 truncate">{word}</p>
+                </div>
+                <span
+                  className={`text-lg font-bold ${
+                    pts === 10 ? "text-green-600" : pts === 5 ? "text-amber-600" : "text-foreground/60"
+                  }`}
+                >
+                  {ptsLabel}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
 
       {isHost && (
-        <button
-          type="button"
-          onClick={handleNextCategory}
-          disabled={ending}
-          className="w-full rounded-2xl bg-mint-green py-4 font-bold text-xl text-white shadow-card active:scale-[0.98] disabled:opacity-60"
-        >
-          {ending
-            ? "מעדכן..."
-            : isLastCategory
-              ? "סיום משחק ועדכון ניקוד"
-              : "הקטגוריה הבאה"}
-        </button>
+        <div className="bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t shadow-md rounded-t-2xl">
+          <button
+            type="button"
+            onClick={handleNextCategory}
+            disabled={ending}
+            className="w-full rounded-2xl bg-mint-green py-4 font-bold text-xl text-white shadow-card active:scale-[0.98] disabled:opacity-60"
+          >
+            {ending
+              ? "מעדכן..."
+              : isLastCategory
+                ? "סיום משחק ועדכון ניקוד"
+                : "הקטגוריה הבאה"}
+          </button>
+        </div>
       )}
     </div>
   );

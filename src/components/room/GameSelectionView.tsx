@@ -111,61 +111,63 @@ export function GameSelectionView({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-soft-pink/20 via-background to-sky-blue/20 flex flex-col p-6"
+      className="flex flex-col w-full bg-gradient-to-b from-soft-pink/20 via-background to-sky-blue/20"
       dir="rtl"
       lang="he"
     >
-      <h1 className="text-3xl font-bold text-foreground text-center mt-4 mb-2">
-        איזה משחק נשחק עכשיו?
-      </h1>
-      <p className="text-foreground/70 text-center mb-6">בחר משחק והצבע להצבעה</p>
+      <div className="p-4">
+        <h1 className="text-3xl font-bold text-foreground text-center mt-4 mb-2">
+          איזה משחק נשחק עכשיו?
+        </h1>
+        <p className="text-foreground/70 text-center mb-6">בחר משחק והצבע להצבעה</p>
 
-      {startError && (
-        <p className="text-soft-pink font-medium text-center mb-4" role="alert">
-          {startError}
-        </p>
-      )}
+        {startError && (
+          <p className="text-soft-pink font-medium text-center mb-4" role="alert">
+            {startError}
+          </p>
+        )}
 
-      <div className="flex-1 flex flex-col gap-4 max-w-md w-full mx-auto">
-        {GAMES.map((game) => {
-          const count = voteCount(game.id);
-          const isSelected = myVote?.game_id === game.id;
-          return (
-            <button
-              key={game.id}
-              type="button"
-              onClick={() => handleVote(game.id)}
-              disabled={voting}
-              className={`
-                w-full rounded-2xl p-6 flex items-center justify-between gap-4
-                text-right transition shadow-soft active:scale-[0.98] disabled:opacity-60
-                ${isSelected ? "ring-4 ring-playful-yellow bg-playful-yellow/30" : "bg-white/90 hover:bg-white"}
-              `}
-            >
-              <span className="text-5xl" aria-hidden>
-                {game.icon}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-xl text-foreground">{game.label}</p>
-                <p className="text-foreground/70 text-sm mt-1">
-                  {count} {count === 1 ? "הצבעה" : "הצבעות"}
-                </p>
-              </div>
-            </button>
-          );
-        })}
+        <div className="flex flex-col gap-4 max-w-md w-full mx-auto">
+          {GAMES.map((game) => {
+            const count = voteCount(game.id);
+            const isSelected = myVote?.game_id === game.id;
+            return (
+              <button
+                key={game.id}
+                type="button"
+                onClick={() => handleVote(game.id)}
+                disabled={voting}
+                className={`
+                  w-full rounded-2xl p-6 flex items-center justify-between gap-4
+                  text-right transition shadow-soft active:scale-[0.98] disabled:opacity-60
+                  ${isSelected ? "ring-4 ring-playful-yellow bg-playful-yellow/30" : "bg-white/90 hover:bg-white"}
+                `}
+              >
+                <span className="text-5xl" aria-hidden>
+                  {game.icon}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-xl text-foreground">{game.label}</p>
+                  <p className="text-foreground/70 text-sm mt-1">
+                    {count} {count === 1 ? "הצבעה" : "הצבעות"}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {isHost && (
-        <div className="mt-8 flex flex-col items-center gap-4">
-          <p className="text-foreground/80 font-medium">
+        <div className="bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t shadow-md rounded-t-2xl">
+          <p className="text-foreground/80 font-medium text-center mb-3">
             סה״כ הצבעות: {totalVotes} מתוך {totalPlayers} שחקנים
           </p>
           <button
             type="button"
             onClick={handleHostStart}
             disabled={starting}
-            className="w-full max-w-xs py-4 rounded-2xl bg-mint-green text-white font-bold text-xl shadow-card hover:opacity-95 active:scale-[0.98] disabled:opacity-60"
+            className="w-full max-w-xs py-4 rounded-2xl bg-mint-green text-white font-bold text-xl shadow-card hover:opacity-95 active:scale-[0.98] disabled:opacity-60 mx-auto block"
           >
             {starting ? "מתחיל..." : "בחר את המשחק המנצח והתחל!"}
           </button>

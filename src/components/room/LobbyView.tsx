@@ -54,60 +54,63 @@ export function LobbyView({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-soft-pink/20 via-background to-sky-blue/20 flex flex-col p-6">
-      <h1 className="text-3xl font-bold text-foreground text-center mt-4 mb-2">
-        מחכים לחברים...
-      </h1>
-      <p className="text-foreground/70 text-center mb-6">חדר: {shortCode}</p>
+    <div className="flex flex-col w-full bg-gradient-to-b from-soft-pink/20 via-background to-sky-blue/20">
+      <div className="p-4">
+        <h1 className="text-3xl font-bold text-foreground text-center mt-4 mb-2">
+          מחכים לחברים...
+        </h1>
+        <p className="text-foreground/70 text-center mb-6">חדר: {shortCode}</p>
 
-      <div className="flex justify-center mb-6">
-        <button
-          type="button"
-          onClick={handleCopyInvite}
-          className="flex items-center gap-2 py-3 px-6 rounded-2xl bg-sky-blue/90 text-white font-medium shadow-soft"
-        >
-          <Copy className="w-5 h-5" />
-          {copyDone ? "הועתק!" : "העתק קישור להזמנה"}
-        </button>
-      </div>
-
-      <div className="flex-1 flex flex-col items-center">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="w-6 h-6 text-foreground/70" />
-          <span className="font-medium text-foreground">{players.length} משתתפים</span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full max-w-md">
-          {players.map((p) => (
-            <div
-              key={p.id}
-              className="rounded-2xl bg-white/90 shadow-soft p-4 flex flex-col items-center gap-2"
-            >
-              <span className="text-4xl">{p.avatar}</span>
-              <span className="font-bold text-foreground">{p.name}</span>
-              {p.is_host && (
-                <span className="text-xs text-foreground/60">מארח/ת</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {startError && (
-        <p className="text-soft-pink font-medium text-center mt-2" role="alert">
-          {startError}
-        </p>
-      )}
-
-      {isHost && (
-        <div className="mt-8 flex justify-center">
+        <div className="flex justify-center mb-6">
           <button
             type="button"
-            onClick={handleStart}
-            disabled={starting}
-            className="w-full max-w-xs py-4 rounded-2xl bg-playful-yellow text-foreground font-bold text-xl shadow-card hover:opacity-95 active:scale-[0.98] disabled:opacity-60"
+            onClick={handleCopyInvite}
+            className="flex items-center gap-2 py-3 px-6 rounded-2xl bg-sky-blue/90 text-white font-medium shadow-soft"
           >
-            {starting ? "מעביר..." : "כולנו כאן אפשר להתחיל"}
+            <Copy className="w-5 h-5" />
+            {copyDone ? "הועתק!" : "העתק קישור להזמנה"}
           </button>
+        </div>
+
+        <div className="flex flex-col items-center">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-6 h-6 text-foreground/70" />
+            <span className="font-medium text-foreground">{players.length} משתתפים</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full max-w-md">
+            {players.map((p) => (
+              <div
+                key={p.id}
+                className="rounded-2xl bg-white/90 shadow-soft p-4 flex flex-col items-center gap-2"
+              >
+                <span className="text-4xl">{p.avatar}</span>
+                <span className="font-bold text-foreground">{p.name}</span>
+                {p.is_host && (
+                  <span className="text-xs text-foreground/60">מארח/ת</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {(isHost || startError) && (
+        <div className="bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t shadow-md rounded-t-2xl">
+          {startError && (
+            <p className="text-soft-pink font-medium text-center mt-2 mb-2" role="alert">
+              {startError}
+            </p>
+          )}
+          {isHost && (
+            <button
+              type="button"
+              onClick={handleStart}
+              disabled={starting}
+              className="w-full max-w-xs py-4 rounded-2xl bg-playful-yellow text-foreground font-bold text-xl shadow-card hover:opacity-95 active:scale-[0.98] disabled:opacity-60 mx-auto block"
+            >
+              {starting ? "מעביר..." : "כולנו כאן אפשר להתחיל"}
+            </button>
+          )}
         </div>
       )}
     </div>

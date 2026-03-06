@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="he" dir="rtl">
       <body
-        className={`${heebo.variable} ${geistMono.variable} font-sans antialiased min-h-screen`}
+        className={`${heebo.variable} ${geistMono.variable} font-sans min-h-screen bg-gray-50 text-slate-900 antialiased flex flex-col`}
       >
         {children}
       </body>

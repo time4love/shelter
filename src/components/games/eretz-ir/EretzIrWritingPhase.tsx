@@ -66,7 +66,7 @@ export function EretzIrWritingPhase({
   if (isWaiting) {
     return (
       <div
-        className="fixed inset-0 bg-gray-50 z-50 flex flex-col items-center justify-center gap-4 px-6"
+        className="w-full flex flex-col items-center justify-center gap-4 px-6 py-8"
         dir="rtl"
         lang="he"
       >
@@ -86,12 +86,12 @@ export function EretzIrWritingPhase({
 
   return (
     <div
-      className="fixed inset-0 bg-gray-50 z-50 flex flex-col"
+      className="w-full flex flex-col gap-4"
       dir="rtl"
       lang="he"
     >
-      {/* Fixed header */}
-      <div className="flex-none bg-white shadow-sm px-4 py-3 flex items-center justify-between z-10">
+      {/* Header */}
+      <div className="bg-white shadow-sm px-4 py-3 flex items-center justify-between rounded-2xl">
         <h2 className="text-xl font-bold text-foreground">
           האות: {letter}
         </h2>
@@ -106,8 +106,8 @@ export function EretzIrWritingPhase({
         )}
       </div>
 
-      {/* Card container (flexible middle) */}
-      <div className="flex-1 overflow-hidden flex items-center justify-center p-4">
+      {/* Card container */}
+      <div className="flex items-center justify-center p-4">
         <div
           className={`w-full max-w-sm aspect-square flex flex-col items-center justify-center p-6 rounded-2xl shadow-card ${bgColor}`}
         >
@@ -126,8 +126,8 @@ export function EretzIrWritingPhase({
         </div>
       </div>
 
-      {/* Fixed footer */}
-      <div className="flex-none bg-white border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-10">
+      {/* Footer buttons */}
+      <div className="bg-white border-t rounded-2xl px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="flex gap-3">
           <button
             type="button"
