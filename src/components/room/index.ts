@@ -6,5 +6,7 @@ export { LobbyView } from "./LobbyView";
 export type { LobbyViewProps } from "./LobbyView";
 export { GameSelectionView } from "./GameSelectionView";
 export type { GameSelectionViewProps } from "./GameSelectionView";
+export { GameEngine } from "./GameEngine";
+export type { GameEngineProps } from "./GameEngine";
 export { RoomNotFoundView } from "./RoomNotFoundView";
 export type { RoomNotFoundViewProps } from "./RoomNotFoundView";

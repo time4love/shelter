@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import type { GameStateTOL } from "@/types/database";
 
 type RoomInsert = Database["public"]["Tables"]["rooms"]["Insert"];
 type RoomUpdate = Database["public"]["Tables"]["rooms"]["Update"];
@@ -7,6 +8,8 @@ type PlayerInsert = Database["public"]["Tables"]["players"]["Insert"];
 type PlayerUpsert = PlayerInsert & Partial<Database["public"]["Tables"]["players"]["Update"]>;
 type GameVoteInsert = Database["public"]["Tables"]["game_votes"]["Insert"];
 type GameVoteUpsert = GameVoteInsert & Partial<Database["public"]["Tables"]["game_votes"]["Update"]>;
+type TolStatementInsert = Database["public"]["Tables"]["tol_statements"]["Insert"];
+type TolGuessInsert = Database["public"]["Tables"]["tol_guesses"]["Insert"];
 
 export type RoomInsertResult = { data: { id: string } | null; error: unknown };
 
@@ -30,9 +33,31 @@ export const rooms = {
     client: SupabaseClient<Database>,
     roomId: string,
     status: RoomUpdate["status"],
-    currentGame: RoomUpdate["current_game"]
+    currentGame: RoomUpdate["current_game"],
+    gameState?: GameStateTOL
   ) =>
-    client.from("rooms").update({ status, current_game: currentGame } as never).eq("id", roomId),
+    client
+      .from("rooms")
+      .update(
+        gameState != null
+          ? ({ status, current_game: currentGame, game_state: gameState } as never)
+          : ({ status, current_game: currentGame } as never)
+      )
+      .eq("id", roomId),
+
+  updateGameState: (
+    client: SupabaseClient<Database>,
+    roomId: string,
+    gameState: GameStateTOL
+  ) =>
+    client.from("rooms").update({ game_state: gameState as never }).eq("id", roomId),
+
+  /** Set room back to game selection: status, clear current_game and game_state */
+  updateToGameSelection: (client: SupabaseClient<Database>, roomId: string) =>
+    client
+      .from("rooms")
+      .update({ status: "game_selection", current_game: null, game_state: null } as never)
+      .eq("id", roomId),
 };
 
 export const players = {
@@ -45,10 +70,35 @@ export const players = {
 };
 
 export const gameVotes = {
-  upsert: (
+  upsert: async (
     client: SupabaseClient<Database>,
     row: GameVoteUpsert,
     options: { onConflict: string } = { onConflict: "room_id,player_id" }
+  ) => {
+    const result = await client
+      .from("game_votes")
+      .upsert(row as never, options as never)
+      .select()
+      .single();
+    return result as { data: Database["public"]["Tables"]["game_votes"]["Row"] | null; error: unknown };
+  },
+
+  deleteByRoomId: (client: SupabaseClient<Database>, roomId: string) =>
+    client.from("game_votes").delete().eq("room_id", roomId),
+};
+
+export const tolStatements = {
+  insert: (
+    client: SupabaseClient<Database>,
+    row: TolStatementInsert
   ) =>
-    client.from("game_votes").upsert(row as never, options as never),
+    client.from("tol_statements").upsert(row as never, { onConflict: "room_id,player_id" }),
+};
+
+export const tolGuesses = {
+  insert: (
+    client: SupabaseClient<Database>,
+    row: TolGuessInsert
+  ) =>
+    client.from("tol_guesses").insert(row as never),
 };

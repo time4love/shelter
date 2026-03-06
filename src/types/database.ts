@@ -14,6 +14,19 @@ export type RoomStatus = "lobby" | "game_selection" | "playing" | "results";
 
 export type GameId = "truth_or_lie" | "the_imposter";
 
+/** Truth or Lie: one statement entry in the statements array */
+export type TolStatementItem = { text: string; isTruth: boolean };
+
+/** Room.game_state for Truth or Lie (and future games) */
+export type GameStateTOL =
+  | { phase: "writing" }
+  | {
+      phase: "playing";
+      currentAuthorId: string;
+      authorsLeft: string[];
+    }
+  | { phase: "round_results" };
+
 export interface Database {
   public: {
     Tables: {
@@ -24,6 +37,7 @@ export interface Database {
           host_id: string;
           status: RoomStatus;
           current_game: string | null;
+          game_state: Json | null;
           created_at: string;
         };
         Insert: {
@@ -32,6 +46,7 @@ export interface Database {
           host_id: string;
           status?: RoomStatus;
           current_game?: string | null;
+          game_state?: Json | null;
           created_at?: string;
         };
         Update: {
@@ -40,6 +55,7 @@ export interface Database {
           host_id?: string;
           status?: RoomStatus;
           current_game?: string | null;
+          game_state?: Json | null;
           created_at?: string;
         };
       };
@@ -98,6 +114,55 @@ export interface Database {
           created_at?: string;
         };
       };
+      tol_statements: {
+        Row: {
+          id: string;
+          room_id: string;
+          player_id: string;
+          statements: TolStatementItem[];
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          room_id: string;
+          player_id: string;
+          statements: TolStatementItem[];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          room_id?: string;
+          player_id?: string;
+          statements?: TolStatementItem[];
+          created_at?: string;
+        };
+      };
+      tol_guesses: {
+        Row: {
+          id: string;
+          room_id: string;
+          author_id: string;
+          guesser_id: string;
+          guessed_index: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          room_id: string;
+          author_id: string;
+          guesser_id: string;
+          guessed_index: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          room_id?: string;
+          author_id?: string;
+          guesser_id?: string;
+          guessed_index?: number;
+          created_at?: string;
+        };
+      };
     };
   };
 }
@@ -105,3 +170,5 @@ export interface Database {
 export type RoomRow = Database["public"]["Tables"]["rooms"]["Row"];
 export type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
 export type GameVoteRow = Database["public"]["Tables"]["game_votes"]["Row"];
+export type TolStatementRow = Database["public"]["Tables"]["tol_statements"]["Row"];
+export type TolGuessRow = Database["public"]["Tables"]["tol_guesses"]["Row"];

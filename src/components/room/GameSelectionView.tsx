@@ -45,9 +45,17 @@ export function GameSelectionView({
         player_id: myPlayerInRoom.id,
         game_id: gameId,
       });
-      if (error) throw error;
-    } catch {
-      setStartError("אופס, משהו השתבש. נסה שוב!");
+      if (error) {
+        console.error("Game vote upsert error:", error);
+        throw error;
+      }
+      // Vote saved; Realtime will update counts (or we already have data from .select())
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message: string }).message)
+          : "אופס, משהו השתבש. נסה שוב!";
+      setStartError(message);
     } finally {
       setVoting(false);
     }
@@ -65,11 +73,14 @@ export function GameSelectionView({
     setStarting(true);
     try {
       const winningGame = getWinningGameId();
+      const gameState =
+        winningGame === "truth_or_lie" ? ({ phase: "writing" } as const) : undefined;
       const { error } = await roomsApi.updateStatusAndGame(
         supabase,
         room.id,
         "playing",
-        winningGame
+        winningGame,
+        gameState
       );
       if (error) throw error;
     } catch {

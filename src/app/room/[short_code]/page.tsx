@@ -7,7 +7,7 @@ import { usePlayerStore } from "@/store/player-store";
 import { useEnsurePlayerId } from "@/hooks/useEnsurePlayerId";
 import { useRoomAndJoinStatus } from "@/hooks/useRoomAndJoinStatus";
 import { useLobbyPlayers } from "@/hooks/useLobbyPlayers";
-import { GameSelectionView, JoinModal, LobbyView, RoomNotFoundView } from "@/components/room";
+import { GameEngine, GameSelectionView, JoinModal, LobbyView, RoomNotFoundView } from "@/components/room";
 
 /**
  * Room page – strict flow:
@@ -37,7 +37,10 @@ export default function RoomPage() {
     Boolean(myPlayerInRoom) &&
     Boolean(playerName?.trim()) &&
     Boolean(playerAvatar);
-  const inRoomView = inLobby || (room?.status === "game_selection" && myPlayerInRoom);
+  const inRoomView =
+    inLobby ||
+    (room?.status === "game_selection" && myPlayerInRoom) ||
+    (room?.status === "playing" && myPlayerInRoom);
   const players = useLobbyPlayers(room?.id ?? null, inRoomView);
 
   const supabase = createBrowserClient();
@@ -88,6 +91,18 @@ export default function RoomPage() {
         players={players}
         isHost={isHost}
         myPlayerInRoom={myPlayerInRoom}
+        supabase={supabase}
+      />
+    );
+  }
+
+  if (room.status === "playing" && myPlayerInRoom) {
+    return (
+      <GameEngine
+        room={room}
+        players={players}
+        myPlayerInRoom={myPlayerInRoom}
+        isHost={isHost}
         supabase={supabase}
       />
     );
