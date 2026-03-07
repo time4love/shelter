@@ -63,15 +63,32 @@ export function TolWritingPhase({
         text: text.trim(),
         isTruth: i === truthIndex,
       }));
-      const { error: err } = await tolStatementsApi.insert(supabase, {
+      const result = await tolStatementsApi.insert(supabase, {
         room_id: room.id,
         round_id: roundId,
         player_id: myPlayerInRoom.id,
         statements,
       });
-      if (err) throw err;
+      if (result.error) {
+        const err = result.error as Record<string, unknown>;
+        const msg =
+          (err?.message as string) ??
+          (err?.details as string) ??
+          (err?.code as string) ??
+          (typeof result.error === "object" && result.error !== null
+            ? JSON.stringify(result.error)
+            : String(result.error));
+        console.error("tol_statements insert error:", msg || "see result.error", {
+          name: (result.error as { name?: string })?.name,
+          message: (result.error as { message?: string })?.message,
+          full: result.error,
+        });
+        throw result.error;
+      }
       setSubmitted(true);
-    } catch {
+    } catch (e) {
+      const err = e as { message?: string; details?: string };
+      console.error("TolWritingPhase submit error:", err?.message ?? err?.details ?? e);
       setError("אופס, משהו השתבש. נסה שוב!");
     } finally {
       setSubmitting(false);
