@@ -69,21 +69,20 @@ export function TolWritingPhase({
         player_id: myPlayerInRoom.id,
         statements,
       });
-      if (result.error) {
-        const err = result.error as Record<string, unknown>;
+      const error = result.error;
+      if (error) {
+        const err = error as unknown as Record<string, unknown>;
         const msg =
           (err?.message as string) ??
           (err?.details as string) ??
           (err?.code as string) ??
-          (typeof result.error === "object" && result.error !== null
-            ? JSON.stringify(result.error)
-            : String(result.error));
+          (typeof error === "object" && error !== null ? JSON.stringify(error) : String(error));
         console.error("tol_statements insert error:", msg || "see result.error", {
-          name: (result.error as { name?: string })?.name,
-          message: (result.error as { message?: string })?.message,
-          full: result.error,
+          name: err?.name,
+          message: err?.message,
+          full: error,
         });
-        throw result.error;
+        throw error;
       }
       setSubmitted(true);
     } catch (e) {
