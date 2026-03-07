@@ -23,7 +23,7 @@ export function useGameVotes(
       if (selectionRoundId != null) {
         q = q.eq("selection_round_id", selectionRoundId);
       } else {
-        q = q.is("selection_round_id", null);
+        q = q.eq("selection_round_id", id);
       }
       const { data, error } = await q;
       if (!error && data) setVotes(data as GameVoteRow[]);

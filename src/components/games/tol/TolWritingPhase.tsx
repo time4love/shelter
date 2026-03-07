@@ -14,6 +14,7 @@ export interface TolWritingPhaseProps {
   myPlayerInRoom: PlayerRow;
   isHost: boolean;
   supabase: SupabaseClient<Database>;
+  roundId: string;
   onStartGame: () => void;
 }
 
@@ -30,9 +31,10 @@ export function TolWritingPhase({
   myPlayerInRoom,
   isHost,
   supabase,
+  roundId,
   onStartGame,
 }: TolWritingPhaseProps) {
-  const allStatements = useTolStatements(room.id, true);
+  const allStatements = useTolStatements(room.id, roundId, true);
   const [texts, setTexts] = useState<string[]>(["", "", "", ""]);
   const [truthIndex, setTruthIndex] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
@@ -63,6 +65,7 @@ export function TolWritingPhase({
       }));
       const { error: err } = await tolStatementsApi.insert(supabase, {
         room_id: room.id,
+        round_id: roundId,
         player_id: myPlayerInRoom.id,
         statements,
       });

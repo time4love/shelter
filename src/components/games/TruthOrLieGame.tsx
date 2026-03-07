@@ -22,7 +22,8 @@ function parseGameState(room: RoomRow): GameStateTOL | null {
   const g = room.game_state;
   if (g == null || typeof g !== "object") return null;
   const o = g as Record<string, unknown>;
-  if (o.phase === "writing") return { phase: "writing" };
+  const roundId = typeof o.roundId === "string" ? o.roundId : crypto.randomUUID();
+  if (o.phase === "writing") return { phase: "writing", roundId };
   if (
     o.phase === "playing" &&
     typeof o.currentAuthorId === "string" &&
@@ -30,6 +31,7 @@ function parseGameState(room: RoomRow): GameStateTOL | null {
   ) {
     return {
       phase: "playing",
+      roundId,
       currentAuthorId: o.currentAuthorId,
       authorsLeft: o.authorsLeft as string[],
     };
@@ -41,11 +43,12 @@ function parseGameState(room: RoomRow): GameStateTOL | null {
   ) {
     return {
       phase: "revealing_answers",
+      roundId,
       currentAuthorId: o.currentAuthorId,
       authorsLeft: o.authorsLeft as string[],
     };
   }
-  if (o.phase === "round_results") return { phase: "round_results" };
+  if (o.phase === "round_results") return { phase: "round_results", roundId };
   return null;
 }
 
@@ -56,13 +59,19 @@ export function TruthOrLieGame({
   isHost,
   supabase,
 }: TruthOrLieGameProps) {
-  const gameState = parseGameState(room) ?? { phase: "writing" as const };
+  const gameState = parseGameState(room) ?? {
+    phase: "writing" as const,
+    roundId: crypto.randomUUID(),
+  };
 
   const handleStartGame = async () => {
     if (players.length === 0) return;
+    const roundId =
+      gameState.phase === "writing" ? gameState.roundId : crypto.randomUUID();
     const [first, ...rest] = players;
     await roomsApi.updateGameState(supabase, room.id, {
       phase: "playing",
+      roundId,
       currentAuthorId: first.id,
       authorsLeft: rest.map((p) => p.id),
     });
@@ -85,6 +94,7 @@ export function TruthOrLieGame({
           myPlayerInRoom={myPlayerInRoom}
           isHost={isHost}
           supabase={supabase}
+          roundId={gameState.roundId}
           onStartGame={handleStartGame}
         />
       )}

@@ -27,10 +27,11 @@ export function TolPlayingPhase({
   supabase,
   gameState,
 }: TolPlayingPhaseProps) {
-  const { currentAuthorId, authorsLeft } = gameState;
-  const allStatements = useTolStatements(room.id, true);
+  const { roundId, currentAuthorId, authorsLeft } = gameState;
+  const allStatements = useTolStatements(room.id, roundId, true);
   const guesses = useTolGuessesForAuthor(
     room.id,
+    roundId,
     currentAuthorId,
     gameState.phase === "playing"
   );
@@ -61,6 +62,7 @@ export function TolPlayingPhase({
     setGuessedIndex(displayIndex);
     await tolGuessesApi.insert(supabase, {
       room_id: room.id,
+      round_id: roundId,
       author_id: currentAuthorId,
       guesser_id: myPlayerInRoom.id,
       guessed_index: displayIndex,
@@ -93,12 +95,13 @@ export function TolPlayingPhase({
       );
       await roomsApi.updateGameState(supabase, room.id, {
         phase: "revealing_answers",
+        roundId,
         currentAuthorId,
         authorsLeft,
       });
     };
     run();
-  }, [isHost, allGuessed, truthDisplayIndex, currentAuthorId, authorsLeft, room.id, players, guesses, supabase]);
+  }, [isHost, allGuessed, truthDisplayIndex, roundId, currentAuthorId, authorsLeft, room.id, players, guesses, supabase]);
 
   // Reset trigger ref when author changes so next round can auto-reveal
   useEffect(() => {

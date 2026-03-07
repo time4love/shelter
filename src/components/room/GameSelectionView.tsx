@@ -175,7 +175,7 @@ export function GameSelectionView({
         room_id: room.id,
         player_id: myPlayerInRoom.id,
         game_id: gameId,
-        ...(selectionRoundId != null && { selection_round_id: selectionRoundId }),
+        selection_round_id: selectionRoundId ?? room.id,
       };
       const { error } = await gameVotesApi.upsert(supabase, row);
       if (error) {

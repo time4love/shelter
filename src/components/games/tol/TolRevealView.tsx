@@ -27,12 +27,13 @@ export function TolRevealView({
   supabase,
   gameState,
 }: TolRevealViewProps) {
-  const { currentAuthorId, authorsLeft } = gameState;
+  const { roundId, currentAuthorId, authorsLeft } = gameState;
   const [loading, setLoading] = useState(false);
 
-  const allStatements = useTolStatements(room.id, true);
+  const allStatements = useTolStatements(room.id, roundId, true);
   const guesses = useTolGuessesForAuthor(
     room.id,
+    roundId,
     currentAuthorId,
     true
   );
@@ -62,11 +63,15 @@ export function TolRevealView({
     setLoading(true);
     try {
       if (authorsLeft.length === 0) {
-        await roomsApi.updateGameState(supabase, room.id, { phase: "round_results" });
+        await roomsApi.updateGameState(supabase, room.id, {
+          phase: "round_results",
+          roundId,
+        });
       } else {
         const [nextAuthor, ...rest] = authorsLeft;
         await roomsApi.updateGameState(supabase, room.id, {
           phase: "playing",
+          roundId,
           currentAuthorId: nextAuthor,
           authorsLeft: rest,
         });

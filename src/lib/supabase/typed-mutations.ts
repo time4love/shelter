@@ -119,7 +119,9 @@ export const tolStatements = {
     client: SupabaseClient<Database>,
     row: TolStatementInsert
   ) =>
-    client.from("tol_statements").upsert(row as never, { onConflict: "room_id,player_id" }),
+    client.from("tol_statements").upsert(row as never, {
+      onConflict: "room_id,round_id,player_id",
+    }),
 };
 
 export const tolGuesses = {

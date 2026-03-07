@@ -19,18 +19,20 @@ export type TolStatementItem = { text: string; isTruth: boolean };
 
 /** Room.game_state for Truth or Lie (and future games) */
 export type GameStateTOL =
-  | { phase: "writing" }
+  | { phase: "writing"; roundId: string }
   | {
       phase: "playing";
+      roundId: string;
       currentAuthorId: string;
       authorsLeft: string[];
     }
   | {
       phase: "revealing_answers";
+      roundId: string;
       currentAuthorId: string;
       authorsLeft: string[];
     }
-  | { phase: "round_results" };
+  | { phase: "round_results"; roundId: string };
 
 /** Room.game_state for Eretz Ir (ארץ עיר) */
 export type GameStateEretzIr =
@@ -181,6 +183,7 @@ export interface Database {
         Row: {
           id: string;
           room_id: string;
+          round_id: string;
           player_id: string;
           statements: TolStatementItem[];
           created_at: string;
@@ -188,6 +191,7 @@ export interface Database {
         Insert: {
           id?: string;
           room_id: string;
+          round_id: string;
           player_id: string;
           statements: TolStatementItem[];
           created_at?: string;
@@ -195,6 +199,7 @@ export interface Database {
         Update: {
           id?: string;
           room_id?: string;
+          round_id?: string;
           player_id?: string;
           statements?: TolStatementItem[];
           created_at?: string;
@@ -204,6 +209,7 @@ export interface Database {
         Row: {
           id: string;
           room_id: string;
+          round_id: string;
           author_id: string;
           guesser_id: string;
           guessed_index: number;
@@ -212,6 +218,7 @@ export interface Database {
         Insert: {
           id?: string;
           room_id: string;
+          round_id: string;
           author_id: string;
           guesser_id: string;
           guessed_index: number;
@@ -220,6 +227,7 @@ export interface Database {
         Update: {
           id?: string;
           room_id?: string;
+          round_id?: string;
           author_id?: string;
           guesser_id?: string;
           guessed_index?: number;
