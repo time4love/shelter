@@ -50,7 +50,8 @@ export function EretzIrAsyncResults({
 
   const handleMarkDone = async () => {
     const { data } = await supabase.from("rooms").select("game_state").eq("id", room.id).single();
-    const g = (data?.game_state as { readyPlayers?: string[]; selection_round_id?: string } | null) ?? {};
+    const row = data as { game_state: unknown } | null;
+    const g = (row?.game_state as { readyPlayers?: string[]; selection_round_id?: string } | null) ?? {};
     const current = g.readyPlayers ?? [];
     const next = Array.from(new Set([...current, myPlayerInRoom.id]));
     const selection_round_id =
