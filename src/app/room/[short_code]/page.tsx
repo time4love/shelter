@@ -94,6 +94,7 @@ export default function RoomPage() {
   }
 
   if (room.status === "game_selection" && myPlayerInRoom) {
+    const selectionRoundId = (room.game_state as { selection_round_id?: string } | null)?.selection_round_id ?? null;
     return (
       <div className="min-h-screen w-full flex flex-col pb-24 bg-gray-50 pt-16">
         <TopMenu shortCode={shortCode} />
@@ -104,6 +105,7 @@ export default function RoomPage() {
           isHost={isHost}
           myPlayerInRoom={myPlayerInRoom}
           supabase={supabase}
+          selectionRoundId={selectionRoundId}
         />
         <BottomNavBar
           playerName={playerName ?? ""}
@@ -158,6 +160,7 @@ export default function RoomPage() {
     eretzReadyPlayers.includes(myPlayerInRoom.id);
 
   if (iAmDoneViewingEretz) {
+    const selectionRoundId = (gameState?.selection_round_id as string | undefined) ?? null;
     return (
       <div className="min-h-screen w-full flex flex-col pb-24 bg-gray-50 pt-16">
         <TopMenu shortCode={shortCode} />
@@ -168,6 +171,7 @@ export default function RoomPage() {
           isHost={isHost}
           myPlayerInRoom={myPlayerInRoom}
           supabase={supabase}
+          selectionRoundId={selectionRoundId}
         />
         <BottomNavBar
           playerName={playerName ?? ""}

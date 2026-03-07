@@ -15,6 +15,8 @@ export interface GameSelectionViewProps {
   isHost: boolean;
   myPlayerInRoom: PlayerRow;
   supabase: SupabaseClient<Database>;
+  /** Current selection round – votes are scoped to this round (no cross-round collision). */
+  selectionRoundId?: string | null;
 }
 
 const GAMES: { id: GameId; label: string; icon: string }[] = [
@@ -83,9 +85,10 @@ export function GameSelectionView({
   isHost,
   myPlayerInRoom,
   supabase,
+  selectionRoundId = null,
 }: GameSelectionViewProps) {
   const localPlayerId = myPlayerInRoom.id;
-  const { votes, myVote } = useGameVotes(room.id, localPlayerId, true);
+  const { votes, myVote } = useGameVotes(room.id, localPlayerId, true, selectionRoundId);
   const [voting, setVoting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [transitionOverlay, setTransitionOverlay] = useState<{
@@ -168,11 +171,13 @@ export function GameSelectionView({
     setVoting(true);
     setStartError(null);
     try {
-      const { error } = await gameVotesApi.upsert(supabase, {
+      const row = {
         room_id: room.id,
         player_id: myPlayerInRoom.id,
         game_id: gameId,
-      });
+        ...(selectionRoundId != null && { selection_round_id: selectionRoundId }),
+      };
+      const { error } = await gameVotesApi.upsert(supabase, row);
       if (error) {
         console.error("Game vote upsert error:", error);
         throw error;

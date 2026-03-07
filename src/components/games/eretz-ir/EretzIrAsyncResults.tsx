@@ -50,12 +50,16 @@ export function EretzIrAsyncResults({
 
   const handleMarkDone = async () => {
     const { data } = await supabase.from("rooms").select("game_state").eq("id", room.id).single();
-    const current = (data?.game_state as { readyPlayers?: string[] } | null)?.readyPlayers ?? [];
+    const g = (data?.game_state as { readyPlayers?: string[]; selection_round_id?: string } | null) ?? {};
+    const current = g.readyPlayers ?? [];
     const next = Array.from(new Set([...current, myPlayerInRoom.id]));
+    const selection_round_id =
+      current.length === 0 ? crypto.randomUUID() : (g.selection_round_id ?? crypto.randomUUID());
     await roomsApi.updateGameState(supabase, room.id, {
       phase: "async_results",
       readyPlayers: next,
       roundId,
+      selection_round_id,
     });
   };
 

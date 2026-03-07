@@ -5,24 +5,31 @@ import { createBrowserClient } from "@/lib/supabase/client";
 import type { GameVoteRow } from "@/types/database";
 
 /**
- * Fetches game votes for a room and subscribes to Realtime (INSERT, UPDATE).
- * Used in Game Selection view. Cleans up subscription on unmount.
+ * Fetches game votes for a room (and optional selection round) and subscribes to Realtime.
+ * When selectionRoundId is set, only votes for that round are returned (no cross-round collision).
  */
 export function useGameVotes(
   roomId: string | null,
   myPlayerId: string | null,
-  enabled: boolean
+  enabled: boolean,
+  selectionRoundId: string | null = null
 ): { votes: GameVoteRow[]; myVote: GameVoteRow | null } {
   const [votes, setVotes] = useState<GameVoteRow[]>([]);
 
-  const refetch = useCallback(async (id: string) => {
-    const client = createBrowserClient();
-    const { data, error } = await client
-      .from("game_votes")
-      .select("*")
-      .eq("room_id", id);
-    if (!error && data) setVotes(data as GameVoteRow[]);
-  }, []);
+  const refetch = useCallback(
+    async (id: string) => {
+      const client = createBrowserClient();
+      let q = client.from("game_votes").select("*").eq("room_id", id);
+      if (selectionRoundId != null) {
+        q = q.eq("selection_round_id", selectionRoundId);
+      } else {
+        q = q.is("selection_round_id", null);
+      }
+      const { data, error } = await q;
+      if (!error && data) setVotes(data as GameVoteRow[]);
+    },
+    [selectionRoundId]
+  );
 
   useEffect(() => {
     if (!roomId || !enabled) return;
@@ -31,35 +38,17 @@ export function useGameVotes(
     refetch(roomId);
 
     const channel = client
-      .channel(`game-votes:${roomId}`)
+      .channel(`game-votes:${roomId}:${selectionRoundId ?? "legacy"}`)
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "game_votes",
           filter: `room_id=eq.${roomId}`,
         },
-        (payload) => {
-          const row = payload.new as GameVoteRow;
-          setVotes((prev) => {
-            const exists = prev.some((v) => v.id === row.id);
-            if (exists) return prev;
-            return [...prev, row];
-          });
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "game_votes",
-          filter: `room_id=eq.${roomId}`,
-        },
-        (payload) => {
-          const row = payload.new as GameVoteRow;
-          setVotes((prev) => prev.map((v) => (v.id === row.id ? row : v)));
+        () => {
+          refetch(roomId);
         }
       )
       .subscribe();
@@ -67,7 +56,7 @@ export function useGameVotes(
     return () => {
       client.removeChannel(channel);
     };
-  }, [roomId, enabled, refetch]);
+  }, [roomId, selectionRoundId, enabled, refetch]);
 
   const myVote =
     myPlayerId != null ? votes.find((v) => v.player_id === myPlayerId) ?? null : null;

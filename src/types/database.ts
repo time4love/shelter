@@ -36,7 +36,7 @@ export type GameStateTOL =
 export type GameStateEretzIr =
   | { phase: "rolling"; roundId?: string }
   | { phase: "writing"; letter: string; roundId?: string }
-  | { phase: "async_results"; readyPlayers: string[]; roundId?: string };
+  | { phase: "async_results"; readyPlayers: string[]; roundId?: string; selection_round_id?: string };
 
 /** Eretz Ir: answers object - keys are category names, values are typed words */
 export type EretzIrAnswersMap = Record<string, string>;
@@ -155,6 +155,7 @@ export interface Database {
           player_id: string;
           game_id: GameId;
           round_id: string | null;
+          selection_round_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -163,6 +164,7 @@ export interface Database {
           player_id: string;
           game_id: GameId;
           round_id?: string | null;
+          selection_round_id?: string | null;
           created_at?: string;
         };
         Update: {
@@ -171,6 +173,7 @@ export interface Database {
           player_id?: string;
           game_id?: GameId;
           round_id?: string | null;
+          selection_round_id?: string | null;
           created_at?: string;
         };
       };

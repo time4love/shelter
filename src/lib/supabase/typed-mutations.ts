@@ -54,12 +54,22 @@ export const rooms = {
   ) =>
     client.from("rooms").update({ game_state: gameState } as never).eq("id", roomId),
 
-  /** Set room back to game selection: status, clear current_game and game_state */
-  updateToGameSelection: (client: SupabaseClient<Database>, roomId: string) =>
-    client
+  /** Set room back to game selection with a new selection round (votes scoped to this round). */
+  updateToGameSelection: (
+    client: SupabaseClient<Database>,
+    roomId: string,
+    selectionRoundId?: string
+  ) => {
+    const roundId = selectionRoundId ?? crypto.randomUUID();
+    return client
       .from("rooms")
-      .update({ status: "game_selection", current_game: null, game_state: null } as never)
-      .eq("id", roomId),
+      .update({
+        status: "game_selection",
+        current_game: null,
+        game_state: { selection_round_id: roundId },
+      } as never)
+      .eq("id", roomId);
+  },
 };
 
 type PlayerUpdate = Database["public"]["Tables"]["players"]["Update"];
@@ -85,11 +95,16 @@ export const gameVotes = {
   upsert: async (
     client: SupabaseClient<Database>,
     row: GameVoteUpsert,
-    options: { onConflict: string } = { onConflict: "room_id,player_id" }
+    options?: { onConflict?: string }
   ) => {
+    const onConflict =
+      options?.onConflict ??
+      (row.selection_round_id != null
+        ? "room_id, player_id, selection_round_id"
+        : "room_id, player_id");
     const result = await client
       .from("game_votes")
-      .upsert(row as never, options as never)
+      .upsert(row as never, { onConflict } as never)
       .select()
       .single();
     return result as { data: Database["public"]["Tables"]["game_votes"]["Row"] | null; error: unknown };
