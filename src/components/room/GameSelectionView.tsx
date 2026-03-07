@@ -28,18 +28,31 @@ const GAMES: { id: GameId; label: string; icon: string }[] = [
 
 const TRANSITION_DELAY_MS = 2000;
 
-/** Group votes by game_id, return game ID with max count; on tie, pick random among tied. */
-function getWinningGameId(votes: GameVoteRow[]): GameId {
-  const counts = GAMES.reduce(
+/** Count votes per game. */
+function getVoteCounts(votes: GameVoteRow[]): Record<GameId, number> {
+  return GAMES.reduce(
     (acc, g) => {
       acc[g.id] = votes.filter((v) => v.game_id === g.id).length;
       return acc;
     },
     {} as Record<GameId, number>
   );
+}
+
+/** True if more than one game has the maximum vote count (tie). */
+function hasTie(votes: GameVoteRow[]): boolean {
+  const counts = getVoteCounts(votes);
   const maxCount = Math.max(...Object.values(counts));
-  const tied = GAMES.filter((g) => counts[g.id] === maxCount);
-  return tied[Math.floor(Math.random() * tied.length)]!.id;
+  const withMax = GAMES.filter((g) => counts[g.id] === maxCount);
+  return withMax.length > 1;
+}
+
+/** Game ID with max count; only call when there is no tie (hasTie === false). */
+function getWinningGameId(votes: GameVoteRow[]): GameId {
+  const counts = getVoteCounts(votes);
+  const maxCount = Math.max(...Object.values(counts));
+  const winner = GAMES.find((g) => counts[g.id] === maxCount);
+  return winner!.id;
 }
 
 function battleshipGridSize(playerCount: number): number {
@@ -110,15 +123,19 @@ export function GameSelectionView({
   const everyoneVoted =
     players.length > 0 && votes.length > 0 && votes.length === players.length;
 
-  // Host-only: when everyone has voted, show overlay then after delay update room.
-  // Note: isHost is from parent (room.host_id === playerId from store); don't use myPlayerInRoom.id vs host_id.
-  // Use refs for votes/players so effect doesn't re-run on their change and cancel the timeout.
+  const isTie = everyoneVoted && hasTie(votes);
+
+  // Host-only: when everyone has voted and there is NO tie, show overlay then after delay update room.
+  // On tie we do not start the game; wait for a decisive vote.
+  // Depend on isTie so when tie is broken (isTie -> false) this effect re-runs; deps array size stays constant.
   useEffect(() => {
     if (!isHost) return;
     if (!everyoneVoted || transitionTriggeredRef.current) return;
 
-    transitionTriggeredRef.current = true;
     const currentVotes = votesRef.current;
+    if (hasTie(currentVotes)) return;
+
+    transitionTriggeredRef.current = true;
     const currentPlayers = playersRef.current;
     const winningGameId = getWinningGameId(currentVotes);
     const gameName = GAMES.find((g) => g.id === winningGameId)?.label ?? winningGameId;
@@ -151,12 +168,12 @@ export function GameSelectionView({
     }, TRANSITION_DELAY_MS);
 
     return () => window.clearTimeout(timeoutId);
-  }, [isHost, room.id, everyoneVoted, supabase]);
+  }, [isHost, room.id, everyoneVoted, isTie, supabase]);
 
-  // Non-host: show same overlay when everyone voted (same winner computed for display).
+  // Non-host: show same overlay when everyone voted and there is no tie.
   useEffect(() => {
     if (isHost) return;
-    if (!everyoneVoted) return;
+    if (!everyoneVoted || hasTie(votes)) return;
     if (transitionOverlay) return;
 
     const winningGameId = getWinningGameId(votes);
@@ -223,6 +240,10 @@ export function GameSelectionView({
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-center mt-4 mb-2 animate-pulse">
             איזה משחק נשחק? הצבע עכשיו! 👇
           </h1>
+        ) : isTie ? (
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-center mt-4 mb-2">
+            יש תיקו — הצביעו שוב כדי לבחור משחק אחד 🔄
+          </h1>
         ) : (
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-center mt-4 mb-2">
             הצבעת! ממתינים לשאר... ⏳
@@ -231,6 +252,18 @@ export function GameSelectionView({
         <p className="text-foreground/70 text-center mb-6">
           בחר את המשחק שהכי תרצה לשחק
         </p>
+
+        {isTie && (
+          <div
+            className="rounded-2xl bg-playful-yellow/30 border-2 border-playful-yellow text-foreground p-4 mb-4 text-center"
+            role="alert"
+          >
+            <p className="font-bold text-lg">יש תיקו! 🤝</p>
+            <p className="text-foreground/90 mt-1">
+              שני משחקים או יותר קיבלו אותו מספר קולות. נא להצביע שוב כדי לבחור משחק אחד.
+            </p>
+          </div>
+        )}
 
         {startError && (
           <p className="text-soft-pink font-medium text-center mb-4" role="alert">
